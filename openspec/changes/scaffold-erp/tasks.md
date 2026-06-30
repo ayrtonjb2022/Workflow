@@ -58,8 +58,8 @@ Suggested units: tracker branch `feat/scaffold-erp`. PR 1 (root config + package
 
 ## Phase 6: Docker + Env
 
-- [ ] 6.1 Create `docker-compose.yml` — PG 16 + api service with health checks
-- [ ] 6.2 Create root `.env.example`
+- [x] 6.1 Create `docker-compose.yml` — PG 16 + api service with health checks
+- [x] 6.2 Create root `.env.example`
 
 ## Phase 7: Verification
 
