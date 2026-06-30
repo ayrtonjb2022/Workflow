@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client"
+export type { DocumentType } from "@prisma/client"
 
 let prisma: PrismaClient
 
