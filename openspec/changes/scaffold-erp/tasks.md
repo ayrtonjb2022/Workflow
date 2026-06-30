@@ -29,9 +29,9 @@ Suggested units: tracker branch `feat/scaffold-erp`. PR 1 (root config + package
 
 ## Phase 3: Database Schema
 
-- [ ] 3.1 Create `prisma/schema.prisma` — all v1 entities + enums + indexes + PG 16 datasource
-- [ ] 3.2 Add `tenantId` + compound `(tenant_id, id)` index to every business table
-- [ ] 3.3 Run `prisma migrate dev --name init`
+- [x] 3.1 Create `prisma/schema.prisma` — all v1 entities + enums + indexes + PG 16 datasource
+- [x] 3.2 Add `tenantId` + compound `(tenant_id, id)` index to every business table
+- [x] 3.3 Run `prisma migrate dev --name init` (migration SQL generated via `migrate diff --from-empty`; requires Docker + PG 16 to apply)
 
 ## Phase 4: API Scaffold
 
