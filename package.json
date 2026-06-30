@@ -10,11 +10,15 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@prisma/client": "5.22.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^9.0.0",
     "globals": "^15.0.0",
