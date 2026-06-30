@@ -8,6 +8,7 @@ import { authRoutes } from "./routes/auth.js"
 import { userRoutes } from "./routes/users.js"
 import { roleRoutes } from "./routes/roles.js"
 import { customerRoutes } from "./routes/customers.js"
+import { supplierRoutes } from "./routes/suppliers.js"
 
 export async function buildApp() {
   const app = Fastify({
@@ -25,6 +26,7 @@ export async function buildApp() {
   await app.register(userRoutes, { prefix: "/api" })
   await app.register(roleRoutes, { prefix: "/api" })
   await app.register(customerRoutes, { prefix: "/api" })
+  await app.register(supplierRoutes, { prefix: "/api" })
 
   return app
 }
