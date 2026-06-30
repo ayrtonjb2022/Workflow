@@ -66,5 +66,5 @@ Suggested units: tracker branch `feat/scaffold-erp`. PR 1 (root config + package
 - [x] 7.1 `pnpm install` — zero errors
 - [x] 7.2 `pnpm typecheck` — all workspaces pass
 - [x] 7.3 `pnpm lint` — zero errors
-- [ ] 7.4 Start API → `GET /health` returns 200
-- [ ] 7.5 Start web → welcome page renders
+- [x] 7.4 Start API → `GET /health` returns 200 — ✅ verified
+- [x] 7.5 Start web → welcome page renders — ✅ verified
