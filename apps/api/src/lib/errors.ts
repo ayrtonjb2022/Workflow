@@ -22,3 +22,17 @@ export class ValidationError extends AppError {
     this.name = "ValidationError"
   }
 }
+
+export class AuthError extends AppError {
+  constructor(message: string = "Authentication required") {
+    super(message, 401, "AUTH_ERROR")
+    this.name = "AuthError"
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message: string = "Insufficient permissions") {
+    super(message, 403, "FORBIDDEN")
+    this.name = "ForbiddenError"
+  }
+}
