@@ -42,15 +42,16 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Users, Roles, Routes & Guard
 
-- [ ] 3.1 Create `apps/api/src/modules/users/users.repository.ts` — `findMany(tenantId)`, `findById(tenantId, id)`, `create()`, `update()`, `deactivate()`
-- [ ] 3.2 Create `apps/api/src/modules/users/users.service.ts` — tenant-scoped CRUD delegating to repository
-- [ ] 3.3 Create `apps/api/src/modules/roles/roles.repository.ts` — `findMany(tenantId)`, `findById(tenantId, id)`, `create()`, `update()`, `delete()`, `assignPermission()`, `revokePermission()`, `assignUserRole()`
-- [ ] 3.4 Create `apps/api/src/modules/roles/roles.service.ts` — role CRUD + permission assignment delegation
-- [ ] 3.5 Create `apps/api/src/routes/auth.ts` — POST `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/refresh`, `/auth/magic-link` (request + verify)
-- [ ] 3.6 Create `apps/api/src/routes/users.ts` — GET/POST `/users`, GET/PUT/DELETE `/users/:id`
-- [ ] 3.7 Create `apps/api/src/routes/roles.ts` — GET/POST `/roles`, GET/PUT/DELETE `/roles/:id`, POST/DELETE `/roles/:id/permissions`, POST/DELETE `/roles/:id/users`
-- [ ] 3.8 Create `apps/api/src/plugins/auth-guard.ts` — Fastify plugin adding `authGuard` preHandler that checks `request.user.roles[].permissions` against `config.requiredPermission`; returns 403 if missing
-- [ ] 3.9 Modify `apps/api/src/app.ts` — register cookie plugin, auth guard plugin, all new routes (auth, users, roles) under `/api` prefix
+- [x] 3.1 Create `apps/api/src/modules/users/users.repository.ts` — `findMany(tenantId)`, `findById(tenantId, id)`, `create()`, `update()`, `deactivate()`
+- [x] 3.2 Create `apps/api/src/modules/users/users.service.ts` — tenant-scoped CRUD delegating to repository
+- [x] 3.3 Create `apps/api/src/modules/roles/roles.repository.ts` — `findMany(tenantId)`, `findById(tenantId, id)`, `create()`, `update()`, `delete()`, `assignPermission()`, `revokePermission()`, `assignUserRole()`
+- [x] 3.4 Create `apps/api/src/modules/roles/roles.service.ts` — role CRUD + permission assignment delegation
+- [x] 3.5 Create `apps/api/src/routes/auth.ts` — POST `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/refresh`, `/auth/magic-link` (request + verify)
+- [x] 3.6 Create `apps/api/src/routes/users.ts` — GET/POST `/users`, GET/PUT/DELETE `/users/:id`
+- [x] 3.7 Create `apps/api/src/routes/roles.ts` — GET/POST `/roles`, GET/PUT/DELETE `/roles/:id`, POST/DELETE `/roles/:id/permissions`, POST/DELETE `/roles/:id/users`
+- [x] 3.8 Create `apps/api/src/plugins/auth-guard.ts` — Fastify plugin adding `authGuard` preHandler that checks `request.user.roles[].permissions` against `config.requiredPermission`; returns 403 if missing
+- [x] 3.9 Modify `apps/api/src/app.ts` — register cookie plugin, auth guard plugin, all new routes (auth, users, roles) under `/api` prefix
+- [x] 3.10 Run `pnpm typecheck` + `pnpm lint` — both must pass
 
 ## Phase 4: Seed & Verification
 

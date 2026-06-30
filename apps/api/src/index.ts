@@ -4,7 +4,7 @@ const PORT = parseInt(process.env.PORT || "3000", 10)
 const HOST = process.env.HOST || "0.0.0.0"
 
 async function main() {
-  const app = buildApp()
+  const app = await buildApp()
 
   try {
     await app.listen({ port: PORT, host: HOST })
@@ -17,7 +17,7 @@ async function main() {
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
-  const app = buildApp()
+  const app = await buildApp()
   await app.close()
   process.exit(0)
 })
