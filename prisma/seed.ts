@@ -6,6 +6,7 @@ const RESOURCES = [
   "users",
   "roles",
   "customers",
+  "suppliers",
   "products",
   "invoices",
   "quotes",
