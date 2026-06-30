@@ -34,11 +34,11 @@ Chain strategy: feature-branch-chain
 ## Phase 2: Core Auth Modules
 
 - [x] 2.1 Create `apps/api/src/lib/cookie.ts` — cookie config helper (signed, httpOnly, secure, sameSite, maxAge; dev vs prod via NODE_ENV)
-- [ ] 2.2 Rewrite `apps/api/src/lib/tenant.ts` — extract `tenantId` and `userId` from decrypted JWT cookie instead of `x-tenant-id` header
-- [ ] 2.3 Create `apps/api/src/modules/auth/auth.repository.ts` — `findUserByEmail()`, `findRefreshToken()`, `createRefreshToken()`, `revokeRefreshToken()`, `revokeUserTokens()`
-- [ ] 2.4 Create `apps/api/src/modules/auth/auth.service.ts` — `register()` (hash pw, create user+tenant+refresh token), `login()` (verify pw, return tokens), `refresh()` (rotate), `logout()` (revoke)
-- [ ] 2.5 Create `apps/api/src/modules/magic-link/magic-link.repository.ts` — `createToken()`, `findValidToken()`, `revokeToken()`
-- [ ] 2.6 Create `apps/api/src/modules/magic-link/magic-link.service.ts` — `request()` (generate token, log to console), `verify()` (validate token, issue JWT)
+- [x] 2.2 Rewrite `apps/api/src/lib/tenant.ts` — extract `tenantId` and `userId` from decrypted JWT cookie instead of `x-tenant-id` header
+- [x] 2.3 Create `apps/api/src/modules/auth/auth.repository.ts` — `findByEmail()`, `findById()`, `saveRefreshToken()`, `findRefreshToken()`, `revokeRefreshToken()`, `revokeUserRefreshTokens()`, `createUser()`, `createTenant()`, `createUserWithAdminRole()`
+- [x] 2.4 Create `apps/api/src/modules/auth/auth.service.ts` — `register()` (hash pw, create user+tenant+refresh token), `login()` (verify pw, return tokens), `refresh()` (rotate), `logout()` (revoke)
+- [x] 2.5 Create `apps/api/src/modules/magic-link/magic-link.repository.ts` — `saveToken()`, `findToken()`, `revokeToken()`
+- [x] 2.6 Create `apps/api/src/modules/magic-link/magic-link.service.ts` — `requestMagicLink()` (generate token, log to console), `verifyMagicLink()` (validate token, issue JWT)
 
 ## Phase 3: Users, Roles, Routes & Guard
 
