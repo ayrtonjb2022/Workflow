@@ -44,15 +44,18 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Suppliers module
 
-- [ ] 4.1 Create `apps/api/src/modules/suppliers/suppliers.repository.ts` — (PR #2)
-- [ ] 4.2 Create `apps/api/src/modules/suppliers/suppliers.service.ts` — (PR #2)
-- [ ] 4.3 Create `apps/api/src/routes/suppliers.ts` — (PR #2)
+- [x] 4.1 Create `apps/api/src/modules/suppliers/suppliers.repository.ts` — tenant-scoped CRUD, pagination, search pattern
+- [x] 4.2 Create `apps/api/src/modules/suppliers/suppliers.service.ts` — business logic with duplicate checks
+- [x] 4.3 Create `apps/api/src/routes/suppliers.ts` — GET/POST/PATCH/DELETE /api/suppliers, GET /api/suppliers/export, POST /api/suppliers/import
 
 ## Phase 5: App wiring
 
-- [x] 5.1 Register `customerRoutes` in `apps/api/src/app.ts` under `/api` prefix (supplierRoutes deferred to PR #2)
+- [x] 5.1 Register `customerRoutes` in `apps/api/src/app.ts` under `/api` prefix
+- [x] 5.2 Register `supplierRoutes` in `apps/api/src/app.ts` under `/api` prefix
 
 ## Phase 6: Verification
 
-- [x] 6.1 Run `pnpm typecheck` — fixed all type errors
-- [x] 6.2 Run `pnpm lint` — fixed all lint warnings
+- [x] 6.1 Run `pnpm typecheck` — fixed all type errors (PR #1)
+- [x] 6.2 Run `pnpm lint` — fixed all lint warnings (PR #1)
+- [x] 6.3 Run `pnpm typecheck` — suppliers module compiles cleanly
+- [x] 6.4 Run `pnpm lint` — suppliers module passes lint
