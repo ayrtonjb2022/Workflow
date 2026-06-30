@@ -86,12 +86,13 @@ model User {
   email        String   @unique
   name         String
   passwordHash String   @map("password_hash")
-  role         String
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  refreshTokens RefreshToken[]
+  roles         UserRole[]
 
   @@index([tenantId])
   @@index([tenantId, id])
@@ -102,10 +103,13 @@ model Role {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")
   name        String
-  permissions String
+  description String?
+  isSystem    Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  users           UserRole[]
+  rolePermissions RolePermission[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -117,8 +121,48 @@ model Permission {
   id          String   @id @default(cuid())
   name        String   @unique
   description String
+  resource    String
+  action      String
 
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
   @@map("permissions")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model UserRole {
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
 }
 
 model Branch {
