@@ -7,6 +7,8 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   prettier,
   {
+    files: ["apps/api/src/**"],
+    ignores: ["apps/api/src/lib/**"],
     rules: {
       "no-restricted-imports": [
         "error",

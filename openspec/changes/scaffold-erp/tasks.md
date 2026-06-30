@@ -35,16 +35,16 @@ Suggested units: tracker branch `feat/scaffold-erp`. PR 1 (root config + package
 
 ## Phase 4: API Scaffold
 
-- [ ] 4.1 Create `apps/api/package.json` + `tsconfig.json`
-- [ ] 4.2 Create `apps/api/.env.example`
-- [ ] 4.3 Create `src/lib/prisma.ts` — singleton + `tenantScoped()` wrapper
-- [ ] 4.4 Create `src/lib/tenant.ts` — context extractor + guard
-- [ ] 4.5 Create `src/lib/errors.ts` — AppError, TenantError
-- [ ] 4.6 Create `src/app.ts` — Fastify factory with TypeBox
-- [ ] 4.7 Create `src/index.ts` — entry + graceful shutdown
-- [ ] 4.8 Create `src/routes/health.ts` — GET /health
-- [ ] 4.9 Create `src/modules/health/` — service + repository
-- [ ] 4.10 Add `no-restricted-imports` eslint rule for `@prisma/client`
+- [x] 4.1 Create `apps/api/package.json` + `tsconfig.json`
+- [x] 4.2 Create `apps/api/.env.example` (already existed)
+- [x] 4.3 Create `src/lib/prisma.ts` — singleton + `tenantScoped()` wrapper
+- [x] 4.4 Create `src/lib/tenant.ts` — context extractor + guard
+- [x] 4.5 Create `src/lib/errors.ts` — AppError, TenantError
+- [x] 4.6 Create `src/app.ts` — Fastify factory with TypeBox
+- [x] 4.7 Create `src/index.ts` — entry + graceful shutdown
+- [x] 4.8 Create `src/routes/health.ts` — GET /health
+- [x] 4.9 Create `src/modules/health/` — service + repository
+- [x] 4.10 Add `no-restricted-imports` eslint rule for `@prisma/client` (already existed — scoped properly)
 
 ## Phase 5: Web Scaffold
 
