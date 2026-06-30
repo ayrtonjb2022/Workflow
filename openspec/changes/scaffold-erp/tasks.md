@@ -48,13 +48,13 @@ Suggested units: tracker branch `feat/scaffold-erp`. PR 1 (root config + package
 
 ## Phase 5: Web Scaffold
 
-- [ ] 5.1 Create `apps/web/package.json` + `tsconfig.json`
-- [ ] 5.2 Create `index.html`, `vite.config.ts` (React + Tailwind + /api proxy), `.env.example`
-- [ ] 5.3 Create `src/main.tsx` + `src/styles.css`
-- [ ] 5.4 Create `src/App.tsx` — Router 7 with lazy routes
-- [ ] 5.5 Create `src/layouts/RootLayout.tsx`
-- [ ] 5.6 Create `src/pages/Welcome.tsx`
-- [ ] 5.7 Create `src/pages/NotFound.tsx`
+- [x] 5.1 Create `apps/web/package.json` + `tsconfig.json`
+- [x] 5.2 Create `index.html`, `vite.config.ts` (React + Tailwind + /api proxy), `.env.example`
+- [x] 5.3 Create `src/main.tsx` + `src/styles.css`
+- [x] 5.4 Create `src/App.tsx` — Router 7 with lazy routes
+- [x] 5.5 Create `src/layouts/RootLayout.tsx`
+- [x] 5.6 Create `src/pages/Welcome.tsx`
+- [x] 5.7 Create `src/pages/NotFound.tsx`
 
 ## Phase 6: Docker + Env
 
@@ -63,8 +63,8 @@ Suggested units: tracker branch `feat/scaffold-erp`. PR 1 (root config + package
 
 ## Phase 7: Verification
 
-- [ ] 7.1 `pnpm install` — zero errors
-- [ ] 7.2 `pnpm typecheck` — all workspaces pass
-- [ ] 7.3 `pnpm lint` — zero errors
+- [x] 7.1 `pnpm install` — zero errors
+- [x] 7.2 `pnpm typecheck` — all workspaces pass
+- [x] 7.3 `pnpm lint` — zero errors
 - [ ] 7.4 Start API → `GET /health` returns 200
 - [ ] 7.5 Start web → welcome page renders
