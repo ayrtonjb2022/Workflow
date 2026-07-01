@@ -256,8 +256,9 @@ export async function customerRoutes(app: FastifyInstance) {
         contactId: Type.String(),
       }),
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id, contactId } = request.params as { id: string; contactId: string }
-    return contactsService.delete(contactId, id, request.tenantId)
+    await contactsService.delete(contactId, id, request.tenantId)
+    reply.status(204)
   })
 }

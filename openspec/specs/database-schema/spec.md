@@ -39,6 +39,34 @@ The schema MUST define at minimum these models: `Tenant`, `User`, `Role`, `Custo
 - WHEN the Prisma schema is generated
 - THEN they MUST be defined using `enum InvoiceStatus` and `enum PurchaseOrderStatus`
 
+### Requirement: Supplier Model Fields
+
+The Supplier model MUST include: id (String, @id @default(cuid())), tenantId (String @map("tenant_id")), name (String), email (String?), phone (String?), documentType (DocumentType? from the DocumentType enum), documentNumber (String?), address (String?), active (Boolean @default(true)), createdAt (DateTime @default(now()) @map("created_at")), updatedAt (DateTime @updatedAt @map("updated_at")). The model MUST include a tenant relation with `@@index([tenantId])` and `@@index([tenantId, name])`.
+
+#### Scenario: Schema compile
+
+- GIVEN the Prisma schema after adding the Supplier model
+- WHEN `prisma generate` runs
+- THEN no errors occur and the Supplier model is available in the generated client
+
+#### Scenario: Migration
+
+- GIVEN the Prisma schema with the Supplier model
+- WHEN `prisma migrate dev` runs
+- THEN an AddSupplier migration is created with no destructive changes to existing tables
+
+#### Scenario: Supplier creation
+
+- GIVEN valid supplier data
+- WHEN a supplier is created via Prisma
+- THEN all fields are stored correctly and tenantId is required
+
+#### Scenario: Unique email across tenants
+
+- GIVEN a supplier with a given email in one tenant
+- WHEN a second supplier with the same email is created in a different tenant
+- THEN both suppliers are created successfully (email uniqueness is enforced at the application layer, not the database layer)
+
 ### Requirement: Initial Migration
 
 The project MUST produce a Prisma migration that creates all v1 tables in a single transaction.

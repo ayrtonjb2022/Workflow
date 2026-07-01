@@ -15,9 +15,9 @@ export interface CreateContactInput {
 
 export const contactsService = {
   async list(customerId: string, tenantId: string) {
-    // Verify parent customer exists in tenant
+    // Verify parent customer is active in tenant
     const customer = await prisma.customer.findFirst({
-      where: { id: customerId, tenantId },
+      where: { id: customerId, tenantId, active: true },
     })
     if (!customer) throw new NotFoundError("Customer")
 
@@ -31,9 +31,9 @@ export const contactsService = {
   },
 
   async create(data: CreateContactInput) {
-    // Verify parent customer exists in tenant
+    // Verify parent customer is active in tenant
     const customer = await prisma.customer.findFirst({
-      where: { id: data.customerId, tenantId: data.tenantId },
+      where: { id: data.customerId, tenantId: data.tenantId, active: true },
     })
     if (!customer) throw new NotFoundError("Customer")
 
