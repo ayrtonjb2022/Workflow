@@ -59,12 +59,12 @@ Chain strategy: pending
 
 ## Phase 6: Order + Invoice Lists
 
-- [ ] 6.1 Create `pages/sales/OrderList.tsx` — list with StatusBadge + sourceQuoteId link
-- [ ] 6.2 Create `pages/sales/InvoiceList.tsx` — list with paid column (paidAmount / total)
+- [x] 6.1 Create `pages/sales/OrderList.tsx` — paginated table with search, status filter, StatusBadge
+- [x] 6.2 Create `pages/sales/InvoiceList.tsx` — paginated table with search, status filter, paidAmount/total column
 
 ## Phase 7: Detail Pages + Payments
 
-- [ ] 7.1 Create `pages/sales/QuoteDetail.tsx` — info + line items table + action buttons per status (PR #4)
+- [x] 7.1 Create `pages/sales/QuoteDetail.tsx` — header info, items table, status history, action buttons (send, accept, reject, convert)
 - [ ] 7.2 Create `pages/sales/OrderDetail.tsx` — info + line items + source quote link (PR #5)
 - [ ] 7.3 Create `pages/sales/InvoiceDetail.tsx` — info + payments section + "Registrar Pago" button (PR #5)
 - [ ] 7.4 Create `pages/sales/AddPaymentModal.tsx` — method dropdown, amount, reference (PR #5)
@@ -73,5 +73,5 @@ Chain strategy: pending
 
 - [ ] 8.1 Modify `App.tsx` — add 7 sales routes (`/sales/quotes/*`, `/sales/orders/*`, `/sales/invoices/*`)
 - [ ] 8.2 Modify `RootLayout.tsx` — add "Ventas" group with sub-nav for quotes, orders, invoices
-- [x] 8.3 Verify: `pnpm typecheck --filter @crm/web` + `pnpm lint` pass (Phase 4-5 frontend files)
+- [x] 8.3 Verify: `pnpm typecheck --filter @crm/web` + `pnpm lint` pass (Phases 4-7 frontend files)
 
