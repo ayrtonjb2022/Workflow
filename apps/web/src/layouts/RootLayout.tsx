@@ -19,6 +19,7 @@ import {
   faCashRegister,
   faChartBar,
   faUserGear,
+  faHistory,
   faBell,
   faGear,
 } from "@fortawesome/free-solid-svg-icons"
@@ -89,6 +90,7 @@ const navSections: NavSection[] = [
 
 const bottomNav: NavItem[] = [
   { to: "/admin/reports", label: "Reportes", icon: faChartBar },
+  { to: "/admin/audit", label: "Auditoría", icon: faHistory },
   { to: "/admin/users", label: "Admin", icon: faUserGear },
 ]
 

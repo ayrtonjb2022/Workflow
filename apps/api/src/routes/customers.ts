@@ -147,7 +147,7 @@ export async function customerRoutes(app: FastifyInstance) {
       documentNumber: string
       address?: string
     }
-    return customersService.create({ ...body, tenantId: request.tenantId })
+    return customersService.create({ ...body, tenantId: request.tenantId }, request.userId)
   })
 
   // PATCH /api/customers/:id — update
@@ -180,7 +180,7 @@ export async function customerRoutes(app: FastifyInstance) {
       documentNumber?: string
       address?: string
     }
-    return customersService.update(id, request.tenantId, body)
+    return customersService.update(id, request.tenantId, body, request.userId)
   })
 
   // DELETE /api/customers/:id — deactivate (soft delete)
@@ -191,7 +191,7 @@ export async function customerRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return customersService.deactivate(id, request.tenantId)
+    return customersService.deactivate(id, request.tenantId, request.userId)
   })
 
   // ── Contacts (nested under customers) ───────────────────────
@@ -231,7 +231,7 @@ export async function customerRoutes(app: FastifyInstance) {
       ...body,
       customerId: id,
       tenantId: request.tenantId,
-    })
+    }, request.userId)
   })
 
   // GET /api/customers/:id/contacts/:contactId — get contact
@@ -259,6 +259,6 @@ export async function customerRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id, contactId } = request.params as { id: string; contactId: string }
-    return contactsService.delete(contactId, id, request.tenantId)
+    return contactsService.delete(contactId, id, request.tenantId, request.userId)
   })
 }

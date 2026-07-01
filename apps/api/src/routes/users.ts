@@ -34,7 +34,7 @@ export async function userRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const body = request.body as { email: string; password: string; name: string }
-    return usersService.create({ ...body, tenantId: request.tenantId })
+    return usersService.create({ ...body, tenantId: request.tenantId }, request.userId)
   })
 
   app.patch("/users/:id", {
@@ -49,7 +49,7 @@ export async function userRoutes(app: FastifyInstance) {
   }, async (request) => {
     const { id } = request.params as { id: string }
     const body = request.body as { name?: string; active?: boolean }
-    return usersService.update(id, request.tenantId, body)
+    return usersService.update(id, request.tenantId, body, request.userId)
   })
 
   app.delete("/users/:id", {
@@ -59,6 +59,6 @@ export async function userRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return usersService.deactivate(id, request.tenantId)
+    return usersService.deactivate(id, request.tenantId, request.userId)
   })
 }

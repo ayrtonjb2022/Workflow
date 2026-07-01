@@ -29,6 +29,7 @@ import RoleList from "./pages/admin/RoleList.js"
 import RoleDetail from "./pages/admin/RoleDetail.js"
 import UserList from "./pages/admin/UserList.js"
 import UserDetail from "./pages/admin/UserDetail.js"
+import AuditLogPage from "./pages/admin/AuditLogPage.js"
 import ReportsPage from "./pages/reports/ReportsPage.js"
 
 const router = createBrowserRouter([
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
       { path: "/admin/roles/:id", element: <RoleDetail /> },
       { path: "/admin/users", element: <UserList /> },
       { path: "/admin/users/:id", element: <UserDetail /> },
+      { path: "/admin/audit", element: <AuditLogPage /> },
       { path: "/admin/reports", element: <ReportsPage /> },
       { path: "*", element: <NotFound /> },
     ],

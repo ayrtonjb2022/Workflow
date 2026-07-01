@@ -78,6 +78,7 @@ model Tenant {
   cashRegisters    CashRegister[]
   cashMovements    CashMovement[]
   documentSequences DocumentSequence[]
+  auditLogs         AuditLog[]
 
   @@map("tenants")
 }
@@ -532,4 +533,25 @@ model CashMovement {
   @@index([tenantId])
   @@index([tenantId, id])
   @@map("cash_movements")
+}
+
+// ── Audit ────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  userId     String   @map("user_id")
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  action     String
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, entityType, entityId])
+  @@index([tenantId, userId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
 }

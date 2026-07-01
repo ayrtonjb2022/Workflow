@@ -48,7 +48,7 @@ export async function roleRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const body = request.body as { name: string; description?: string; permissionIds: string[] }
-    return rolesService.create({ ...body, tenantId: request.tenantId })
+    return rolesService.create({ ...body, tenantId: request.tenantId }, request.userId)
   })
 
   // Update role
@@ -64,7 +64,7 @@ export async function roleRoutes(app: FastifyInstance) {
   }, async (request) => {
     const { id } = request.params as { id: string }
     const body = request.body as { name?: string; description?: string }
-    return rolesService.update(id, body)
+    return rolesService.update(id, body, request.userId)
   })
 
   // Delete role
@@ -75,7 +75,7 @@ export async function roleRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return rolesService.delete(id)
+    return rolesService.delete(id, request.userId)
   })
 
   // Set role permissions (replace all)

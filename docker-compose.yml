@@ -1,33 +1,47 @@
 version: "3.8"
 
 services:
-  postgres:
+  db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${DB_USER:-crm}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-crm}
-      POSTGRES_DB: ${DB_NAME:-crm_erp}
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: crm_secret
+      POSTGRES_DB: crm
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crm -d crm_erp"]
+      test: ["CMD-SHELL", "pg_isready -U crm"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://crm:crm_secret@db:5432/crm
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      PORT: "3000"
+      NODE_ENV: production
     ports:
       - "3000:3000"
-    environment:
-      DATABASE_URL: postgresql://${DB_USER:-crm}:${DB_PASSWORD:-crm}@postgres:5432/${DB_NAME:-crm_erp}
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
 
 volumes:
   pgdata:

@@ -2,6 +2,7 @@ import { invoicesRepository } from "./invoices.repository.js"
 import { getNextNumber } from "../../lib/numbering.js"
 import { fromDecimal, toDecimal } from "../../lib/currency.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 export interface InvoiceItemInput {
   productId: string
@@ -82,7 +83,7 @@ export const invoicesService = {
     return formatInvoiceResponse(invoice as unknown as Record<string, unknown>)
   },
 
-  async create(data: CreateInvoiceInput) {
+  async create(data: CreateInvoiceInput, userId: string) {
     const number = await getNextNumber(data.tenantId, "FAC")
     const { lineItems, subtotal, tax, total } = calculateTotals(data.items)
 
@@ -102,10 +103,19 @@ export const invoicesService = {
       lineItems,
     )
 
+    await auditLogger.log({
+      tenantId: data.tenantId,
+      userId,
+      entityType: "Invoice",
+      entityId: invoice.id,
+      action: "CREATE",
+      after: invoice,
+    })
+
     return formatInvoiceResponse(invoice as unknown as Record<string, unknown>)
   },
 
-  async update(id: string, tenantId: string, data: UpdateInvoiceInput) {
+  async update(id: string, tenantId: string, data: UpdateInvoiceInput, userId: string) {
     const existing = await invoicesRepository.findById(id, tenantId)
     if (!existing) throw new NotFoundError("Invoice")
     if (existing.status !== "DRAFT") throw new ValidationError("Only DRAFT invoices can be edited")
@@ -116,17 +126,28 @@ export const invoicesService = {
     if (data.notes !== undefined) updateData.notes = data.notes
     if (data.date) updateData.date = new Date(data.date)
 
+    let invoice: unknown
     if (data.items) {
       const { lineItems, subtotal, tax, total } = calculateTotals(data.items)
       updateData.subtotal = subtotal
       updateData.tax = tax
       updateData.total = total
 
-      const invoice = await invoicesRepository.update(id, tenantId, updateData, lineItems)
-      return formatInvoiceResponse(invoice as unknown as Record<string, unknown>)
+      invoice = await invoicesRepository.update(id, tenantId, updateData, lineItems)
+    } else {
+      invoice = await invoicesRepository.update(id, tenantId, updateData)
     }
 
-    const invoice = await invoicesRepository.update(id, tenantId, updateData)
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Invoice",
+      entityId: id,
+      action: "UPDATE",
+      before: existing,
+      after: invoice,
+    })
+
     return formatInvoiceResponse(invoice as unknown as Record<string, unknown>)
   },
 
@@ -137,14 +158,26 @@ export const invoicesService = {
     return invoicesRepository.updateStatus(id, tenantId, "SENT")
   },
 
-  async cancel(id: string, tenantId: string) {
+  async cancel(id: string, tenantId: string, userId: string) {
     const invoice = await invoicesRepository.findById(id, tenantId)
     if (!invoice) throw new NotFoundError("Invoice")
     if (invoice.status === "PAID") throw new ValidationError("Cannot cancel a paid invoice")
-    return invoicesRepository.updateStatus(id, tenantId, "CANCELLED")
+    const updated = await invoicesRepository.updateStatus(id, tenantId, "CANCELLED")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Invoice",
+      entityId: id,
+      action: "CANCEL",
+      before: invoice,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async addPayment(invoiceId: string, tenantId: string, data: AddPaymentInput) {
+  async addPayment(invoiceId: string, tenantId: string, data: AddPaymentInput, userId: string) {
     const invoice = await invoicesRepository.findById(invoiceId, tenantId)
     if (!invoice) throw new NotFoundError("Invoice")
     if (invoice.status === "CANCELLED") throw new ValidationError("Cannot add payment to a cancelled invoice")
@@ -168,17 +201,29 @@ export const invoicesService = {
       })
       const totalPaid = Number(agg._sum.amount || 0)
 
+      let updatedInvoice
       if (totalPaid >= Number(invoice.total)) {
-        await tx.invoice.update({
+        updatedInvoice = await tx.invoice.update({
           where: { id: invoiceId },
           data: { status: "PAID" },
         })
       } else if (invoice.status === "DRAFT") {
-        await tx.invoice.update({
+        updatedInvoice = await tx.invoice.update({
           where: { id: invoiceId },
           data: { status: "SENT" },
         })
       }
+
+      await auditLogger.log({
+        tenantId,
+        userId,
+        entityType: "Invoice",
+        entityId: invoiceId,
+        action: "PAY",
+        before: invoice,
+        after: updatedInvoice ?? invoice,
+        tx,
+      })
 
       return payment
     })

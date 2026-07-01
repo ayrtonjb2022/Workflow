@@ -1,4 +1,5 @@
 import { useCallback, useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { useQuery } from "@tanstack/react-query"
 import { api } from "../../../lib/api.js"
 import { Button } from "../../../components/ui/Button.js"
@@ -157,6 +158,7 @@ export default function LineItemEditor({
                       <ProductSearchDropdown
                         search={searchTerms[index] ?? ""}
                         onSelect={(p) => selectProduct(index, p)}
+                        inputRef={searchRefs.current[index]}
                       />
                     )}
                   </div>
@@ -234,10 +236,13 @@ interface PaginatedProducts {
 function ProductSearchDropdown({
   search,
   onSelect,
+  inputRef,
 }: {
   search: string
   onSelect: (p: ProductResult) => void
+  inputRef: HTMLDivElement | null
 }) {
+  const [dropdownStyle, setDropdownStyle] = useState<Record<string, string>>({})
   const { data, isLoading } = useQuery({
     queryKey: ["products", "search", search],
     queryFn: () =>
@@ -245,12 +250,28 @@ function ProductSearchDropdown({
     enabled: search.length >= 1,
   })
 
+  // Calculate position relative to viewport (portal bypasses overflow clipping)
+  useEffect(() => {
+    if (!inputRef) return
+    const rect = inputRef.getBoundingClientRect()
+    setDropdownStyle({
+      position: "fixed",
+      top: `${rect.bottom + 4}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+    })
+  }, [inputRef])
+
   if (!search || search.length < 1) return null
 
   const products = data?.data ?? []
 
-  return (
-    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+  const dropdown = (
+    <div
+      style={dropdownStyle}
+      onMouseDown={(e) => e.stopPropagation()}
+      className="z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+    >
       {isLoading && (
         <div className="px-3 py-2 text-sm text-gray-500 text-center">
           Buscando...
@@ -278,4 +299,6 @@ function ProductSearchDropdown({
       ))}
     </div>
   )
+
+  return createPortal(dropdown, document.body)
 }

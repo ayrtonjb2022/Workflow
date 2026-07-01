@@ -41,7 +41,7 @@ export async function branchRoutes(app: FastifyInstance) {
       name: body.name,
       address: body.address,
       phone: body.phone,
-    })
+    }, request.userId)
   })
 
   // PATCH /api/branches/:id — update
@@ -58,7 +58,7 @@ export async function branchRoutes(app: FastifyInstance) {
   }, async (request) => {
     const { id } = request.params as { id: string }
     const body = request.body as { name?: string; address?: string; phone?: string }
-    return branchesService.update(id, request.tenantId, body)
+    return branchesService.update(id, request.tenantId, body, request.userId)
   })
 
   // DELETE /api/branches/:id — deactivate
@@ -69,6 +69,6 @@ export async function branchRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return branchesService.deactivate(id, request.tenantId)
+    return branchesService.deactivate(id, request.tenantId, request.userId)
   })
 }

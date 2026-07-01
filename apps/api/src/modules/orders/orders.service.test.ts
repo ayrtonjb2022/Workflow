@@ -27,6 +27,7 @@ const { mockPrisma, mockGetNextNumber, mockInvoiceCreate } = vi.hoisted(() => {
     rolePermission: { deleteMany: fn(), createMany: fn() },
     documentSequence: { findUnique: fn(), update: fn() },
     refreshToken: { findFirst: fn(), create: fn(), update: fn() },
+    auditLog: { create: fn(), findMany: fn(), count: fn() },
   }
   const txMock = fn()
   txMock.mockImplementation((cb: (tx: Record<string, any>) => any) => cb(mp))
@@ -95,11 +96,11 @@ describe("ordersService", () => {
       }
       mockPrisma.order.create.mockResolvedValue(makeOrder())
 
-      const result = await ordersService.create(input)
+      const result = await ordersService.create(input, "user-1")
 
       expect(mockGetNextNumber).toHaveBeenCalledWith(tenantId, "PED")
-      expect(result.number).toBe("PED-00001")
-      expect(result.status).toBe("DRAFT")
+      expect((result as any).number).toBe("PED-00001")
+      expect((result as any).status).toBe("DRAFT")
       expect(result.subtotal).toBe(250)
       expect(result.tax).toBe(52.5)
       expect(result.total).toBe(302.5)
@@ -110,7 +111,7 @@ describe("ordersService", () => {
     it("returns formatted order when found", async () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder())
       const result = await ordersService.get("ord-1", tenantId)
-      expect(result.id).toBe("ord-1")
+      expect((result as any).id).toBe("ord-1")
     })
 
     it("throws NotFoundError when not found", async () => {
@@ -135,7 +136,7 @@ describe("ordersService", () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder({ status: "DRAFT" }))
       mockPrisma.order.update.mockResolvedValue(makeOrder({ status: "SENT" }))
 
-      await ordersService.send("ord-1", tenantId)
+      await ordersService.send("ord-1", tenantId, "user-1")
       expect(mockPrisma.order.update).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: "ord-1", tenantId }, data: { status: "SENT" } }),
       )
@@ -143,7 +144,7 @@ describe("ordersService", () => {
 
     it("rejects non-DRAFT orders", async () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder({ status: "SENT" }))
-      await expect(ordersService.send("ord-1", tenantId)).rejects.toThrow(ValidationError)
+      await expect(ordersService.send("ord-1", tenantId, "user-1")).rejects.toThrow(ValidationError)
     })
   })
 
@@ -152,7 +153,7 @@ describe("ordersService", () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder({ status: "SENT" }))
       mockPrisma.order.update.mockResolvedValue(makeOrder({ status: "PAID" }))
 
-      const result = await ordersService.pay("ord-1", tenantId)
+      const result = await ordersService.pay("ord-1", tenantId, "user-1")
 
       expect(mockPrisma.order.update).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: "ord-1", tenantId }, data: { status: "PAID" } }),
@@ -163,6 +164,7 @@ describe("ordersService", () => {
           customerId: "cust-1",
           items: expect.arrayContaining([expect.objectContaining({ productId: "prod-1" })]),
         }),
+        "user-1",
       )
       expect(result).toHaveProperty("order")
       expect(result).toHaveProperty("invoice")
@@ -170,7 +172,7 @@ describe("ordersService", () => {
 
     it("rejects pay on non-SENT orders", async () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder({ status: "DRAFT" }))
-      await expect(ordersService.pay("ord-1", tenantId)).rejects.toThrow(ValidationError)
+      await expect(ordersService.pay("ord-1", tenantId, "user-1")).rejects.toThrow(ValidationError)
     })
   })
 
@@ -179,7 +181,7 @@ describe("ordersService", () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder({ status: "SENT" }))
       mockPrisma.order.update.mockResolvedValue(makeOrder({ status: "CANCELLED" }))
 
-      await ordersService.cancel("ord-1", tenantId)
+      await ordersService.cancel("ord-1", tenantId, "user-1")
       expect(mockPrisma.order.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: "CANCELLED" } }),
       )
@@ -187,12 +189,12 @@ describe("ordersService", () => {
 
     it("rejects cancel on PAID order", async () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder({ status: "PAID" }))
-      await expect(ordersService.cancel("ord-1", tenantId)).rejects.toThrow(ValidationError)
+      await expect(ordersService.cancel("ord-1", tenantId, "user-1")).rejects.toThrow(ValidationError)
     })
 
     it("throws NotFoundError for missing order", async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null)
-      await expect(ordersService.cancel("ord-404", tenantId)).rejects.toThrow(NotFoundError)
+      await expect(ordersService.cancel("ord-404", tenantId, "user-1")).rejects.toThrow(NotFoundError)
     })
   })
 
@@ -212,8 +214,8 @@ describe("ordersService", () => {
 
       const result = await ordersService.createFromQuote(quote, tenantId)
       expect(mockGetNextNumber).toHaveBeenCalledWith(tenantId, "PED")
-      expect(result.number).toBe("PED-00001")
-      expect(result.status).toBe("DRAFT")
+      expect((result as any).number).toBe("PED-00001")
+      expect((result as any).status).toBe("DRAFT")
     })
   })
 
@@ -222,14 +224,14 @@ describe("ordersService", () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder({ status: "DRAFT" }))
       mockPrisma.order.update.mockResolvedValue(makeOrder({ notes: "updated" }))
 
-      const result = await ordersService.update("ord-1", tenantId, { notes: "updated" })
-      expect(result.notes).toBe("updated")
+      const result = await ordersService.update("ord-1", tenantId, { notes: "updated" }, "user-1")
+      expect((result as any).notes).toBe("updated")
     })
 
     it("rejects update on non-DRAFT order", async () => {
       mockPrisma.order.findFirst.mockResolvedValue(makeOrder({ status: "SENT" }))
       await expect(
-        ordersService.update("ord-1", tenantId, { notes: "nope" }),
+        ordersService.update("ord-1", tenantId, { notes: "nope" }, "user-1"),
       ).rejects.toThrow(ValidationError)
     })
   })

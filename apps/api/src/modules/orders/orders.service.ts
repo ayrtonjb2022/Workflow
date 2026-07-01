@@ -3,6 +3,7 @@ import { invoicesService } from "../invoices/invoices.service.js"
 import { getNextNumber } from "../../lib/numbering.js"
 import { fromDecimal, toDecimal } from "../../lib/currency.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 export interface OrderItemInput {
   productId: string
@@ -69,7 +70,7 @@ export const ordersService = {
     return formatOrderResponse(order as unknown as Record<string, unknown>)
   },
 
-  async create(data: CreateOrderInput) {
+  async create(data: CreateOrderInput, userId: string) {
     const number = await getNextNumber(data.tenantId, "PED")
     const { lineItems, subtotal, tax, total } = calculateTotals(data.items)
 
@@ -88,6 +89,15 @@ export const ordersService = {
       },
       lineItems,
     )
+
+    await auditLogger.log({
+      tenantId: data.tenantId,
+      userId,
+      entityType: "Order",
+      entityId: order.id,
+      action: "CREATE",
+      after: order,
+    })
 
     return formatOrderResponse(order as unknown as Record<string, unknown>)
   },
@@ -138,7 +148,7 @@ export const ordersService = {
     return formatOrderResponse(order as unknown as Record<string, unknown>)
   },
 
-  async update(id: string, tenantId: string, data: UpdateOrderInput) {
+  async update(id: string, tenantId: string, data: UpdateOrderInput, userId: string) {
     const existing = await ordersRepository.findById(id, tenantId)
     if (!existing) throw new NotFoundError("Order")
     if (existing.status !== "DRAFT") throw new ValidationError("Only DRAFT orders can be edited")
@@ -149,28 +159,51 @@ export const ordersService = {
     if (data.notes !== undefined) updateData.notes = data.notes
     if (data.date) updateData.date = new Date(data.date)
 
+    let order: unknown
     if (data.items) {
       const { lineItems, subtotal, tax, total } = calculateTotals(data.items)
       updateData.subtotal = subtotal
       updateData.tax = tax
       updateData.total = total
 
-      const order = await ordersRepository.update(id, tenantId, updateData, lineItems)
-      return formatOrderResponse(order as unknown as Record<string, unknown>)
+      order = await ordersRepository.update(id, tenantId, updateData, lineItems)
+    } else {
+      order = await ordersRepository.update(id, tenantId, updateData)
     }
 
-    const order = await ordersRepository.update(id, tenantId, updateData)
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Order",
+      entityId: id,
+      action: "UPDATE",
+      before: existing,
+      after: order,
+    })
+
     return formatOrderResponse(order as unknown as Record<string, unknown>)
   },
 
-  async send(id: string, tenantId: string) {
+  async send(id: string, tenantId: string, userId: string) {
     const order = await ordersRepository.findById(id, tenantId)
     if (!order) throw new NotFoundError("Order")
     if (order.status !== "DRAFT") throw new ValidationError("Only DRAFT orders can be sent")
-    return ordersRepository.updateStatus(id, tenantId, "SENT")
+    const updated = await ordersRepository.updateStatus(id, tenantId, "SENT")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Order",
+      entityId: id,
+      action: "SEND",
+      before: order,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async pay(id: string, tenantId: string) {
+  async pay(id: string, tenantId: string, userId: string) {
     const order = await ordersRepository.findById(id, tenantId)
     if (!order) throw new NotFoundError("Order")
     if (order.status !== "SENT") throw new ValidationError("Only SENT orders can be marked as paid")
@@ -188,15 +221,46 @@ export const ordersService = {
         quantity: item.quantity,
         unitPrice: Number(item.unitPrice),
       })),
+    }, userId) as Record<string, unknown>
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Order",
+      entityId: id,
+      action: "PAY",
+      before: order,
+      after: { ...order, status: "PAID" },
+    })
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Invoice",
+      entityId: invoice.id as string,
+      action: "CREATE",
+      after: invoice,
     })
 
     return { order: formatOrderResponse(order as unknown as Record<string, unknown>), invoice }
   },
 
-  async cancel(id: string, tenantId: string) {
+  async cancel(id: string, tenantId: string, userId: string) {
     const order = await ordersRepository.findById(id, tenantId)
     if (!order) throw new NotFoundError("Order")
     if (order.status === "PAID") throw new ValidationError("Cannot cancel a paid order")
-    return ordersRepository.updateStatus(id, tenantId, "CANCELLED")
+    const updated = await ordersRepository.updateStatus(id, tenantId, "CANCELLED")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Order",
+      entityId: id,
+      action: "CANCEL",
+      before: order,
+      after: updated,
+    })
+
+    return updated
   },
 }

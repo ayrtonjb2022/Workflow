@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt"
 import { usersRepository } from "./users.repository.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 export const usersService = {
   async list(tenantId: string) {
@@ -13,28 +14,62 @@ export const usersService = {
     return user
   },
 
-  async create(data: { email: string; name: string; password: string; tenantId: string }) {
+  async create(data: { email: string; name: string; password: string; tenantId: string }, userId: string) {
     const existing = await usersRepository.findByEmail(data.email, data.tenantId)
     if (existing) throw new ValidationError("Email already exists in this tenant")
 
     const passwordHash = await bcrypt.hash(data.password, 12)
-    return usersRepository.create({
+    const user = await usersRepository.create({
       email: data.email,
       name: data.name,
       passwordHash,
       tenantId: data.tenantId,
     })
+
+    await auditLogger.log({
+      tenantId: data.tenantId,
+      userId,
+      entityType: "User",
+      entityId: user.id,
+      action: "CREATE",
+      after: user,
+    })
+
+    return user
   },
 
-  async update(id: string, tenantId: string, data: { name?: string; active?: boolean }) {
+  async update(id: string, tenantId: string, data: { name?: string; active?: boolean }, userId: string) {
     const user = await usersRepository.findById(id, tenantId)
     if (!user) throw new NotFoundError("User")
-    return usersRepository.update(id, tenantId, data)
+    const updated = await usersRepository.update(id, tenantId, data)
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "User",
+      entityId: id,
+      action: "UPDATE",
+      before: user,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async deactivate(id: string, tenantId: string) {
+  async deactivate(id: string, tenantId: string, userId: string) {
     const user = await usersRepository.findById(id, tenantId)
     if (!user) throw new NotFoundError("User")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "User",
+      entityId: id,
+      action: "DELETE",
+      before: user,
+      after: null,
+    })
+
     return usersRepository.deactivate(id, tenantId)
   },
 }

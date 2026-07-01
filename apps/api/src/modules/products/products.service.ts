@@ -3,6 +3,7 @@ import getPrismaClient from "../../lib/prisma.js"
 import { getNextNumber } from "../../lib/numbering.js"
 import { toDecimal } from "../../lib/currency.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 const prisma = getPrismaClient()
 
@@ -34,7 +35,7 @@ export const productsService = {
     stock?: number
     description?: string
     minStock?: number
-  }) {
+  }, userId: string) {
     // Validate category exists if provided
     if (data.categoryId) {
       const category = await productsRepository.findCategoryById(data.categoryId, data.tenantId)
@@ -60,7 +61,7 @@ export const productsService = {
     const unitPrice = toDecimal(data.unitPrice)
     const costPrice = toDecimal(data.costPrice)
 
-    return productsRepository.create({
+    const product = await productsRepository.create({
       ...data,
       code,
       unitPrice,
@@ -68,6 +69,17 @@ export const productsService = {
       stock: data.stock ?? 0,
       minStock: data.minStock ?? 0,
     })
+
+    await auditLogger.log({
+      tenantId: data.tenantId,
+      userId,
+      entityType: "Product",
+      entityId: product.id,
+      action: "CREATE",
+      after: product,
+    })
+
+    return product
   },
 
   async update(
@@ -81,6 +93,7 @@ export const productsService = {
       description?: string
       minStock?: number
     },
+    userId: string,
   ) {
     const product = await productsRepository.findById(id, tenantId)
     if (!product) throw new NotFoundError("Product")
@@ -103,12 +116,35 @@ export const productsService = {
     if (data.minStock !== undefined) updateData.minStock = data.minStock
 
     // Never update code or stock via this endpoint
-    return productsRepository.update(id, tenantId, updateData)
+    const updated = await productsRepository.update(id, tenantId, updateData)
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Product",
+      entityId: id,
+      action: "UPDATE",
+      before: product,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async deactivate(id: string, tenantId: string) {
+  async deactivate(id: string, tenantId: string, userId: string) {
     const product = await productsRepository.findById(id, tenantId)
     if (!product) throw new NotFoundError("Product")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Product",
+      entityId: id,
+      action: "DELETE",
+      before: product,
+      after: null,
+    })
+
     return productsRepository.deactivate(id, tenantId)
   },
 
@@ -117,6 +153,7 @@ export const productsService = {
     tenantId: string,
     quantity: number,
     reason?: string,
+    userId?: string,
   ) {
     if (quantity === 0) {
       throw new ValidationError("Quantity must be non-zero")
@@ -162,6 +199,19 @@ export const productsService = {
           reference: reason ?? null,
         },
       })
+
+      if (userId) {
+        await auditLogger.log({
+          tenantId,
+          userId,
+          entityType: "Product",
+          entityId: id,
+          action: "ADJUSTMENT",
+          before: product,
+          after: updated,
+          tx,
+        })
+      }
 
       return updated
     })

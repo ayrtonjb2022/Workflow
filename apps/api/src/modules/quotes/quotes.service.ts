@@ -2,6 +2,7 @@ import { quotesRepository } from "./quotes.repository.js"
 import { getNextNumber } from "../../lib/numbering.js"
 import { fromDecimal, toDecimal } from "../../lib/currency.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 export interface QuoteItemInput {
   productId: string
@@ -71,7 +72,7 @@ export const quotesService = {
     return formatQuoteResponse(quote as unknown as Record<string, unknown>)
   },
 
-  async create(data: CreateQuoteInput) {
+  async create(data: CreateQuoteInput, userId: string) {
     const number = await getNextNumber(data.tenantId, "COT")
     const { lineItems, subtotal, tax, total } = calculateTotals(data.items)
 
@@ -91,10 +92,19 @@ export const quotesService = {
       lineItems,
     )
 
+    await auditLogger.log({
+      tenantId: data.tenantId,
+      userId,
+      entityType: "Quote",
+      entityId: quote.id,
+      action: "CREATE",
+      after: quote,
+    })
+
     return formatQuoteResponse(quote as unknown as Record<string, unknown>)
   },
 
-  async update(id: string, tenantId: string, data: UpdateQuoteInput) {
+  async update(id: string, tenantId: string, data: UpdateQuoteInput, userId: string) {
     const existing = await quotesRepository.findById(id, tenantId)
     if (!existing) throw new NotFoundError("Quote")
     if (existing.status !== "DRAFT") throw new ValidationError("Only DRAFT quotes can be edited")
@@ -105,42 +115,89 @@ export const quotesService = {
     if (data.notes !== undefined) updateData.notes = data.notes
     if (data.date) updateData.date = new Date(data.date)
 
+    let quote: unknown
     if (data.items) {
       const { lineItems, subtotal, tax, total } = calculateTotals(data.items)
       updateData.subtotal = subtotal
       updateData.tax = tax
       updateData.total = total
 
-      const quote = await quotesRepository.update(id, tenantId, updateData, lineItems)
-      return formatQuoteResponse(quote as unknown as Record<string, unknown>)
+      quote = await quotesRepository.update(id, tenantId, updateData, lineItems)
+    } else {
+      quote = await quotesRepository.update(id, tenantId, updateData)
     }
 
-    const quote = await quotesRepository.update(id, tenantId, updateData)
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Quote",
+      entityId: id,
+      action: "UPDATE",
+      before: existing,
+      after: quote,
+    })
+
     return formatQuoteResponse(quote as unknown as Record<string, unknown>)
   },
 
-  async send(id: string, tenantId: string) {
+  async send(id: string, tenantId: string, userId: string) {
     const quote = await quotesRepository.findById(id, tenantId)
     if (!quote) throw new NotFoundError("Quote")
     if (quote.status !== "DRAFT") throw new ValidationError("Only DRAFT quotes can be sent")
-    return quotesRepository.updateStatus(id, tenantId, "SENT")
+    const updated = await quotesRepository.updateStatus(id, tenantId, "SENT")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Quote",
+      entityId: id,
+      action: "SEND",
+      before: quote,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async accept(id: string, tenantId: string) {
+  async accept(id: string, tenantId: string, userId: string) {
     const quote = await quotesRepository.findById(id, tenantId)
     if (!quote) throw new NotFoundError("Quote")
     if (quote.status !== "SENT") throw new ValidationError("Only SENT quotes can be accepted")
-    return quotesRepository.updateStatus(id, tenantId, "ACCEPTED")
+    const updated = await quotesRepository.updateStatus(id, tenantId, "ACCEPTED")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Quote",
+      entityId: id,
+      action: "ACCEPT",
+      before: quote,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async reject(id: string, tenantId: string) {
+  async reject(id: string, tenantId: string, userId: string) {
     const quote = await quotesRepository.findById(id, tenantId)
     if (!quote) throw new NotFoundError("Quote")
     if (quote.status !== "SENT") throw new ValidationError("Only SENT quotes can be rejected")
-    return quotesRepository.updateStatus(id, tenantId, "REJECTED")
+    const updated = await quotesRepository.updateStatus(id, tenantId, "REJECTED")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Quote",
+      entityId: id,
+      action: "REJECT",
+      before: quote,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async convertToOrder(id: string, tenantId: string) {
+  async convertToOrder(id: string, tenantId: string, userId: string) {
     const quote = await quotesRepository.findById(id, tenantId)
     if (!quote) throw new NotFoundError("Quote")
     if (quote.status !== "ACCEPTED") throw new ValidationError("Only ACCEPTED quotes can be converted to orders")
@@ -172,12 +229,12 @@ export const quotesService = {
     const total = toDecimal(subtotal + tax)
 
     return prisma.$transaction(async (tx) => {
-      await tx.quote.update({
+      const updatedQuote = await tx.quote.update({
         where: { id, tenantId },
         data: { status: "ACCEPTED" },
       })
 
-      return tx.order.create({
+      const order = await tx.order.create({
         data: {
           tenantId: quoteData.tenantId,
           branchId: quoteData.branchId,
@@ -192,6 +249,29 @@ export const quotesService = {
           items: { create: lineItems },
         } as never,
       })
+
+      await auditLogger.log({
+        tenantId,
+        userId,
+        entityType: "Quote",
+        entityId: id,
+        action: "CONVERT",
+        before: quote,
+        after: updatedQuote,
+        tx,
+      })
+
+      await auditLogger.log({
+        tenantId,
+        userId,
+        entityType: "Order",
+        entityId: order.id,
+        action: "CREATE",
+        after: order,
+        tx,
+      })
+
+      return order
     })
   },
 }

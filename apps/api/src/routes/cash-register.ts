@@ -51,7 +51,7 @@ export async function cashRegisterRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return cashRegisterService.openRegister(id, request.tenantId)
+    return cashRegisterService.openRegister(id, request.tenantId, request.userId)
   })
 
   // POST /api/cash-registers/:id/close — close register
@@ -62,7 +62,7 @@ export async function cashRegisterRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return cashRegisterService.closeRegister(id, request.tenantId)
+    return cashRegisterService.closeRegister(id, request.tenantId, request.userId)
   })
 
   // POST /api/cash-registers/:id/movements — add movement
@@ -92,6 +92,7 @@ export async function cashRegisterRoutes(app: FastifyInstance) {
       body.amount,
       body.description,
       body.reference,
+      request.userId,
     )
   })
 }

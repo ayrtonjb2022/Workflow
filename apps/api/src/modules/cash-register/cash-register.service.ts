@@ -2,6 +2,7 @@ import { cashRegisterRepository } from "./cash-register.repository.js"
 import getPrismaClient from "../../lib/prisma.js"
 import { toDecimal, fromDecimal } from "../../lib/currency.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 const prisma = getPrismaClient()
 
@@ -53,7 +54,7 @@ export const cashRegisterService = {
     }
   },
 
-  async openRegister(id: string, tenantId: string) {
+  async openRegister(id: string, tenantId: string, userId: string) {
     const register = await cashRegisterRepository.findById(id, tenantId)
     if (!register) throw new NotFoundError("CashRegister")
 
@@ -71,13 +72,23 @@ export const cashRegisterService = {
       include: { branch: { select: { id: true, name: true } } },
     })
 
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "CashRegister",
+      entityId: id,
+      action: "OPEN",
+      before: register,
+      after: updated,
+    })
+
     return {
       ...updated,
       balance: fromDecimal(updated.balance),
     }
   },
 
-  async closeRegister(id: string, tenantId: string) {
+  async closeRegister(id: string, tenantId: string, userId: string) {
     const register = await cashRegisterRepository.findById(id, tenantId)
     if (!register) throw new NotFoundError("CashRegister")
 
@@ -99,6 +110,16 @@ export const cashRegisterService = {
       include: { branch: { select: { id: true, name: true } } },
     })
 
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "CashRegister",
+      entityId: id,
+      action: "CLOSE",
+      before: register,
+      after: updated,
+    })
+
     return {
       ...updated,
       balance: fromDecimal(updated.balance),
@@ -112,6 +133,7 @@ export const cashRegisterService = {
     amount: number,
     description?: string,
     reference?: string,
+    userId?: string,
   ) {
     if (amount <= 0) {
       throw new ValidationError("Amount must be greater than zero")
@@ -166,6 +188,19 @@ export const cashRegisterService = {
 
       // Update balance
       await cashRegisterRepository.updateBalance(tx, id, tenantId, newBalance)
+
+      if (userId) {
+        await auditLogger.log({
+          tenantId,
+          userId,
+          entityType: "CashRegister",
+          entityId: id,
+          action: type === "IN" ? "IN" : "OUT",
+          before: { balance: register.balance },
+          after: { balance: toDecimal(newBalance) },
+          tx,
+        })
+      }
 
       return {
         ...movement,

@@ -43,6 +43,7 @@ export function createMockPrisma(fn: () => any) {
     rolePermission: { deleteMany: newFn(), createMany: newFn() },
     documentSequence: { findUnique: newFn(), update: newFn() },
     refreshToken: { findFirst: newFn(), create: newFn(), update: newFn() },
+    auditLog: { create: newFn(), findMany: newFn(), count: newFn() },
   }
 
   // $transaction: execute callback with mockPrisma as the tx client

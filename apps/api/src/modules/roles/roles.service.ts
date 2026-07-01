@@ -1,6 +1,7 @@
 import { rolesRepository } from "./roles.repository.js"
 import { usersRepository } from "../users/users.repository.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 export const rolesService = {
   async list(tenantId: string) {
@@ -13,15 +14,38 @@ export const rolesService = {
     return role
   },
 
-  async create(data: { name: string; description?: string; tenantId: string; permissionIds: string[] }) {
-    return rolesRepository.create(data)
+  async create(data: { name: string; description?: string; tenantId: string; permissionIds: string[] }, userId: string) {
+    const role = await rolesRepository.create(data)
+
+    await auditLogger.log({
+      tenantId: data.tenantId,
+      userId,
+      entityType: "Role",
+      entityId: role.id,
+      action: "CREATE",
+      after: role,
+    })
+
+    return role
   },
 
-  async update(id: string, data: { name?: string; description?: string }) {
+  async update(id: string, data: { name?: string; description?: string }, userId: string) {
     const role = await rolesRepository.findById(id)
     if (!role) throw new NotFoundError("Role")
     if (role.isSystem) throw new ValidationError("Cannot modify system roles")
-    return rolesRepository.update(id, data)
+    const updated = await rolesRepository.update(id, data)
+
+    await auditLogger.log({
+      tenantId: role.tenantId,
+      userId,
+      entityType: "Role",
+      entityId: id,
+      action: "UPDATE",
+      before: role,
+      after: updated,
+    })
+
+    return updated
   },
 
   async setPermissions(id: string, permissionIds: string[]) {
@@ -65,10 +89,21 @@ export const rolesService = {
     return usersRepository.removeRole(userId, roleId)
   },
 
-  async delete(id: string) {
+  async delete(id: string, userId: string) {
     const role = await rolesRepository.findById(id)
     if (!role) throw new NotFoundError("Role")
     if (role.isSystem) throw new ValidationError("Cannot delete system roles")
+
+    await auditLogger.log({
+      tenantId: role.tenantId,
+      userId,
+      entityType: "Role",
+      entityId: id,
+      action: "DELETE",
+      before: role,
+      after: null,
+    })
+
     return rolesRepository.delete(id)
   },
 }

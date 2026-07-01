@@ -27,6 +27,7 @@ const { mockPrisma, mockGetNextNumber } = vi.hoisted(() => {
     rolePermission: { deleteMany: fn(), createMany: fn() },
     documentSequence: { findUnique: fn(), update: fn() },
     refreshToken: { findFirst: fn(), create: fn(), update: fn() },
+    auditLog: { create: fn(), findMany: fn(), count: fn() },
   }
   const txMock = fn()
   txMock.mockImplementation((cb: (tx: Record<string, any>) => any) => cb(mp))
@@ -88,7 +89,7 @@ describe("productsService", () => {
         name: "New Product",
         unitPrice: 100,
         costPrice: 60,
-      })
+      }, "user-1")
 
       expect(mockGetNextNumber).toHaveBeenCalledWith(tenantId, "PRO")
       expect(result.code).toBe("PRO-00001")
@@ -105,7 +106,7 @@ describe("productsService", () => {
         code: "CUSTOM-001",
         unitPrice: 100,
         costPrice: 60,
-      })
+      }, "user-1")
 
       expect(result.code).toBe("CUSTOM-001")
     })
@@ -120,7 +121,7 @@ describe("productsService", () => {
         code: "TAKEN",
         unitPrice: 100,
         costPrice: 60,
-      })
+      }, "user-1")
 
       expect(result.code).toBe("PRO-00001")
     })
@@ -135,7 +136,7 @@ describe("productsService", () => {
           categoryId: "cat-404",
           unitPrice: 100,
           costPrice: 60,
-        }),
+        }, "user-1"),
       ).rejects.toThrow(ValidationError)
     })
   })
@@ -231,14 +232,14 @@ describe("productsService", () => {
       mockPrisma.product.findFirst.mockResolvedValue(makeProduct())
       mockPrisma.product.update.mockResolvedValue(makeProduct({ name: "Updated" }))
 
-      const result = await productsService.update("prod-1", tenantId, { name: "Updated" })
+      const result = await productsService.update("prod-1", tenantId, { name: "Updated" }, "user-1")
       expect(result.name).toBe("Updated")
     })
 
     it("throws NotFoundError when missing", async () => {
       mockPrisma.product.findFirst.mockResolvedValue(null)
       await expect(
-        productsService.update("prod-404", tenantId, { name: "Nope" }),
+        productsService.update("prod-404", tenantId, { name: "Nope" }, "user-1"),
       ).rejects.toThrow(NotFoundError)
     })
   })
@@ -248,13 +249,13 @@ describe("productsService", () => {
       mockPrisma.product.findFirst.mockResolvedValue(makeProduct())
       mockPrisma.product.update.mockResolvedValue(makeProduct({ active: false }))
 
-      const result = await productsService.deactivate("prod-1", tenantId)
+      const result = await productsService.deactivate("prod-1", tenantId, "user-1")
       expect(result.active).toBe(false)
     })
 
     it("throws NotFoundError when missing", async () => {
       mockPrisma.product.findFirst.mockResolvedValue(null)
-      await expect(productsService.deactivate("prod-404", tenantId)).rejects.toThrow(NotFoundError)
+      await expect(productsService.deactivate("prod-404", tenantId, "user-1")).rejects.toThrow(NotFoundError)
     })
   })
 })

@@ -59,7 +59,7 @@ export async function supplierRoutes(app: FastifyInstance) {
       documentNumber?: string
       address?: string
     }
-    return suppliersService.create({ ...body, tenantId: request.tenantId })
+    return suppliersService.create({ ...body, tenantId: request.tenantId }, request.userId)
   })
 
   // PATCH /api/suppliers/:id — update
@@ -90,7 +90,7 @@ export async function supplierRoutes(app: FastifyInstance) {
       documentNumber?: string
       address?: string
     }
-    return suppliersService.update(id, request.tenantId, body)
+    return suppliersService.update(id, request.tenantId, body, request.userId)
   })
 
   // DELETE /api/suppliers/:id — deactivate (soft delete)
@@ -101,6 +101,6 @@ export async function supplierRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return suppliersService.deactivate(id, request.tenantId)
+    return suppliersService.deactivate(id, request.tenantId, request.userId)
   })
 }

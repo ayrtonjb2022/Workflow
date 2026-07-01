@@ -15,6 +15,7 @@ const RESOURCES = [
   "cash",
   "reports",
   "settings",
+  "audit",
 ] as const
 
 const ACTIONS = ["create", "read", "update", "delete"] as const

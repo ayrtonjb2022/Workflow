@@ -39,7 +39,7 @@ export async function warehouseRoutes(app: FastifyInstance) {
       tenantId: request.tenantId,
       name: body.name,
       address: body.address,
-    })
+    }, request.userId)
   })
 
   // PATCH /api/warehouses/:id — update
@@ -55,7 +55,7 @@ export async function warehouseRoutes(app: FastifyInstance) {
   }, async (request) => {
     const { id } = request.params as { id: string }
     const body = request.body as { name?: string; address?: string }
-    return warehousesService.update(id, request.tenantId, body)
+    return warehousesService.update(id, request.tenantId, body, request.userId)
   })
 
   // DELETE /api/warehouses/:id — deactivate
@@ -66,6 +66,6 @@ export async function warehouseRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return warehousesService.deactivate(id, request.tenantId)
+    return warehousesService.deactivate(id, request.tenantId, request.userId)
   })
 }

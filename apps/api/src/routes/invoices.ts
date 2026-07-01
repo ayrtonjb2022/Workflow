@@ -2,6 +2,8 @@ import { FastifyInstance } from "fastify"
 import { Type } from "@sinclair/typebox"
 import { invoicesService } from "../modules/invoices/invoices.service.js"
 import { authGuard } from "../plugins/auth-guard.js"
+import { generateInvoicePdf } from "../lib/pdf-generator.js"
+import type { PdfDocData } from "../lib/pdf-generator.js"
 
 export async function invoiceRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authGuard)
@@ -40,7 +42,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const body = request.body as any
-    return invoicesService.create({ ...body, tenantId: request.tenantId })
+    return invoicesService.create({ ...body, tenantId: request.tenantId }, request.userId)
   })
 
   // GET /api/invoices/:id — get by id
@@ -69,7 +71,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as any
-    return invoicesService.update(id, request.tenantId, request.body as any)
+    return invoicesService.update(id, request.tenantId, request.body as any, request.userId)
   })
 
   // POST /api/invoices/:id/send — DRAFT→SENT
@@ -85,7 +87,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
     config: { requiredPermission: "invoices:update" },
     schema: { params: Type.Object({ id: Type.String() }) },
   }, async (request) => {
-    return invoicesService.cancel((request.params as any).id, request.tenantId)
+    return invoicesService.cancel((request.params as any).id, request.tenantId, request.userId)
   })
 
   // POST /api/invoices/:id/payments — add a payment to an invoice
@@ -107,6 +109,45 @@ export async function invoiceRoutes(app: FastifyInstance) {
       method: body.method,
       amount: body.amount,
       reference: body.reference,
-    })
+    }, request.userId)
+  })
+
+  // GET /api/invoices/:id/pdf — download PDF
+  app.get("/invoices/:id/pdf", {
+    config: { requiredPermission: "invoices:read" },
+    schema: { params: Type.Object({ id: Type.String() }) },
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const invoice = await invoicesService.get(id, request.tenantId) as Record<string, unknown>
+
+    const data: PdfDocData = {
+      title: "Factura",
+      number: invoice.number as string,
+      date: new Date(invoice.date as string).toLocaleDateString("es-AR"),
+      customerName: (invoice.customer as Record<string, unknown>).name as string,
+      customerEmail: ((invoice.customer as Record<string, unknown>).email as string) ?? undefined,
+      items: (invoice.items as Array<Record<string, unknown>>).map((item) => ({
+        product: ((item.product as Record<string, unknown>)?.name as string) ?? (item.productId as string),
+        quantity: item.quantity as number,
+        unitPrice: item.unitPrice as number,
+        subtotal: item.subtotal as number,
+      })),
+      subtotal: invoice.subtotal as number,
+      tax: invoice.tax as number,
+      total: invoice.total as number,
+      notes: (invoice.notes as string) ?? undefined,
+      status: invoice.status as string,
+      payments: (invoice.payments as Array<Record<string, unknown>>)?.map((p) => ({
+        method: p.method as string,
+        amount: p.amount as number,
+        date: new Date(p.createdAt as string).toLocaleDateString("es-AR"),
+      })),
+      paidAmount: (invoice.paidAmount as number) ?? 0,
+    }
+
+    const pdfBuffer = await generateInvoicePdf(data)
+    reply.header("Content-Type", "application/pdf")
+    reply.header("Content-Disposition", `attachment; filename="${data.number}.pdf"`)
+    return reply.send(pdfBuffer)
   })
 }

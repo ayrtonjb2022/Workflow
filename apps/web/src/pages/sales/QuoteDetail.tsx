@@ -194,6 +194,17 @@ export default function QuoteDetail() {
 
       {/* Action buttons */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-end mb-4">
+          <a
+            href={`/api/quotes/${id}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            Descargar PDF
+          </a>
+        </div>
+
         {quote.status === "DRAFT" && (
           <div className="flex items-center justify-end gap-3">
             <Button

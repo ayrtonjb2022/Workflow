@@ -18,6 +18,7 @@ import { warehouseRoutes } from "./routes/warehouses.js"
 import { cashRegisterRoutes } from "./routes/cash-register.js"
 import { dashboardRoutes } from "./routes/dashboard.js"
 import { reportRoutes } from "./routes/reports.js"
+import { auditRoutes } from "./routes/audit.js"
 
 export async function buildApp() {
   const app = Fastify({
@@ -44,6 +45,7 @@ export async function buildApp() {
   await app.register(cashRegisterRoutes, { prefix: "/api" })
   await app.register(dashboardRoutes, { prefix: "/api" })
   await app.register(reportRoutes, { prefix: "/api" })
+  await app.register(auditRoutes, { prefix: "/api" })
 
   return app
 }

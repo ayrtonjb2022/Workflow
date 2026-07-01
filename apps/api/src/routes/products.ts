@@ -4,6 +4,7 @@ import { productsService } from "../modules/products/products.service.js"
 import { productsRepository } from "../modules/products/products.repository.js"
 import { authGuard } from "../plugins/auth-guard.js"
 import { ValidationError } from "../lib/errors.js"
+import { auditLogger } from "../lib/audit-logger.js"
 import {
   CreateCategoryBody,
   UpdateCategoryBody,
@@ -43,11 +44,22 @@ export async function productRoutes(app: FastifyInstance) {
       throw new ValidationError("A category with this name already exists in this tenant")
     }
 
-    return productsRepository.createCategory({
+    const category = await productsRepository.createCategory({
       tenantId: request.tenantId,
       name: body.name,
       description: body.description,
     })
+
+    await auditLogger.log({
+      tenantId: request.tenantId,
+      userId: request.userId,
+      entityType: "Category",
+      entityId: category.id,
+      action: "CREATE",
+      after: category,
+    })
+
+    return category
   })
 
   // PATCH /api/categories/:id — update
@@ -72,7 +84,20 @@ export async function productRoutes(app: FastifyInstance) {
       }
     }
 
-    return productsRepository.updateCategory(id, request.tenantId, body)
+    const before = await productsRepository.findCategoryById(id, request.tenantId)
+    const updated = await productsRepository.updateCategory(id, request.tenantId, body)
+
+    await auditLogger.log({
+      tenantId: request.tenantId,
+      userId: request.userId,
+      entityType: "Category",
+      entityId: id,
+      action: "UPDATE",
+      before,
+      after: updated,
+    })
+
+    return updated
   })
 
   // ── Products ───────────────────────────────────────────────
@@ -141,7 +166,7 @@ export async function productRoutes(app: FastifyInstance) {
     const product = await productsService.create({
       ...body,
       tenantId: request.tenantId,
-    })
+    }, request.userId)
     return reply.status(201).send(product)
   })
 
@@ -162,7 +187,7 @@ export async function productRoutes(app: FastifyInstance) {
       description?: string
       minStock?: number
     }
-    return productsService.update(id, request.tenantId, body)
+    return productsService.update(id, request.tenantId, body, request.userId)
   })
 
   // DELETE /api/products/:id — deactivate (soft delete)
@@ -173,7 +198,7 @@ export async function productRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { id } = request.params as { id: string }
-    return productsService.deactivate(id, request.tenantId)
+    return productsService.deactivate(id, request.tenantId, request.userId)
   })
 
   // POST /api/products/:id/adjust-stock — stock adjustment
@@ -186,6 +211,6 @@ export async function productRoutes(app: FastifyInstance) {
   }, async (request) => {
     const { id } = request.params as { id: string }
     const body = request.body as { quantity: number; reason?: string }
-    return productsService.adjustStock(id, request.tenantId, body.quantity, body.reason)
+    return productsService.adjustStock(id, request.tenantId, body.quantity, body.reason, request.userId)
   })
 }

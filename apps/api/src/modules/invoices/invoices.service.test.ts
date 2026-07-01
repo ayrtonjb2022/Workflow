@@ -27,6 +27,7 @@ const { mockPrisma, mockGetNextNumber } = vi.hoisted(() => {
     rolePermission: { deleteMany: fn(), createMany: fn() },
     documentSequence: { findUnique: fn(), update: fn() },
     refreshToken: { findFirst: fn(), create: fn(), update: fn() },
+    auditLog: { create: fn(), findMany: fn(), count: fn() },
   }
   const txMock = fn()
   txMock.mockImplementation((cb: (tx: Record<string, any>) => any) => cb(mp))
@@ -94,14 +95,14 @@ describe("invoicesService", () => {
 
       mockPrisma.invoice.create.mockResolvedValue(makeInvoice())
 
-      const result = await invoicesService.create(input)
+      const result = await invoicesService.create(input, "user-1")
 
       expect(mockGetNextNumber).toHaveBeenCalledWith(tenantId, "FAC")
-      expect(result.number).toBe("FAC-00001")
+      expect((result as any).number).toBe("FAC-00001")
       expect(result.subtotal).toBe(250)
       expect(result.tax).toBe(52.5)
       expect(result.total).toBe(302.5)
-      expect(result.status).toBe("DRAFT")
+      expect((result as any).status).toBe("DRAFT")
       expect(result.items).toHaveLength(2)
     })
 
@@ -117,7 +118,7 @@ describe("invoicesService", () => {
         makeInvoice({ date: new Date("2025-06-01") }),
       )
 
-      const result = await invoicesService.create(input)
+      await invoicesService.create(input, "user-1")
 
       const createCallData = mockPrisma.invoice.create.mock.calls[0][0].data
       expect(createCallData.date).toEqual(new Date("2025-06-01"))
@@ -131,7 +132,7 @@ describe("invoicesService", () => {
       mockPrisma.invoice.findFirst.mockResolvedValue(makeInvoice())
 
       const result = await invoicesService.get("inv-1", tenantId)
-      expect(result.id).toBe("inv-1")
+      expect((result as any).id).toBe("inv-1")
       expect(result.subtotal).toBe(250)
     })
 
@@ -198,7 +199,7 @@ describe("invoicesService", () => {
       mockPrisma.invoice.findFirst.mockResolvedValue(makeInvoice({ status: "SENT" }))
       mockPrisma.invoice.update.mockResolvedValue(makeInvoice({ status: "CANCELLED" }))
 
-      await invoicesService.cancel("inv-1", tenantId)
+      await invoicesService.cancel("inv-1", tenantId, "user-1")
       expect(mockPrisma.invoice.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "inv-1", tenantId },
@@ -211,20 +212,20 @@ describe("invoicesService", () => {
       mockPrisma.invoice.findFirst.mockResolvedValue(makeInvoice({ status: "DRAFT" }))
       mockPrisma.invoice.update.mockResolvedValue(makeInvoice({ status: "CANCELLED" }))
 
-      await invoicesService.cancel("inv-1", tenantId)
+      await invoicesService.cancel("inv-1", tenantId, "user-1")
       expect(mockPrisma.invoice.update).toHaveBeenCalled()
     })
 
     it("rejects PAID invoices", async () => {
       mockPrisma.invoice.findFirst.mockResolvedValue(makeInvoice({ status: "PAID" }))
 
-      await expect(invoicesService.cancel("inv-1", tenantId)).rejects.toThrow(ValidationError)
+      await expect(invoicesService.cancel("inv-1", tenantId, "user-1")).rejects.toThrow(ValidationError)
     })
 
     it("throws NotFoundError for missing invoice", async () => {
       mockPrisma.invoice.findFirst.mockResolvedValue(null)
 
-      await expect(invoicesService.cancel("inv-404", tenantId)).rejects.toThrow(NotFoundError)
+      await expect(invoicesService.cancel("inv-404", tenantId, "user-1")).rejects.toThrow(NotFoundError)
     })
   })
 
@@ -235,15 +236,15 @@ describe("invoicesService", () => {
       mockPrisma.invoice.findFirst.mockResolvedValue(makeInvoice({ status: "DRAFT" }))
       mockPrisma.invoice.update.mockResolvedValue(makeInvoice({ notes: "updated" }))
 
-      const result = await invoicesService.update("inv-1", tenantId, { notes: "updated" })
-      expect(result.notes).toBe("updated")
+      const result = await invoicesService.update("inv-1", tenantId, { notes: "updated" }, "user-1")
+      expect((result as any).notes).toBe("updated")
     })
 
     it("rejects update on non-DRAFT invoice", async () => {
       mockPrisma.invoice.findFirst.mockResolvedValue(makeInvoice({ status: "SENT" }))
 
       await expect(
-        invoicesService.update("inv-1", tenantId, { notes: "nope" }),
+        invoicesService.update("inv-1", tenantId, { notes: "nope" }, "user-1"),
       ).rejects.toThrow(ValidationError)
     })
   })
@@ -263,7 +264,7 @@ describe("invoicesService", () => {
         invoiceId: "inv-1",
         method: "cash",
         amount: 50,
-      })
+      }, "user-1")
 
       expect(mockPrisma.invoicePayment.create).toHaveBeenCalled()
       expect(mockPrisma.invoice.update).toHaveBeenCalledWith(
@@ -282,7 +283,7 @@ describe("invoicesService", () => {
         invoiceId: "inv-1",
         method: "bank",
         amount: 302.5,
-      })
+      }, "user-1")
 
       expect(mockPrisma.invoice.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -300,7 +301,7 @@ describe("invoicesService", () => {
           invoiceId: "inv-1",
           method: "cash",
           amount: 50,
-        }),
+        }, "user-1"),
       ).rejects.toThrow(ValidationError)
     })
 
@@ -312,7 +313,7 @@ describe("invoicesService", () => {
           invoiceId: "inv-1",
           method: "cash",
           amount: 50,
-        }),
+        }, "user-1"),
       ).rejects.toThrow(ValidationError)
     })
 
@@ -324,7 +325,7 @@ describe("invoicesService", () => {
           invoiceId: "inv-404",
           method: "cash",
           amount: 50,
-        }),
+        }, "user-1"),
       ).rejects.toThrow(NotFoundError)
     })
   })

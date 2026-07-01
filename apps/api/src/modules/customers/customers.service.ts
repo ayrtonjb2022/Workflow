@@ -1,6 +1,7 @@
 import { customersRepository } from "./customers.repository.js"
 import type { DocumentType } from "../../lib/prisma.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 export interface CreateCustomerInput {
   tenantId: string
@@ -34,7 +35,7 @@ export const customersService = {
     return customer
   },
 
-  async create(data: CreateCustomerInput) {
+  async create(data: CreateCustomerInput, userId: string) {
     // Check duplicate email within tenant
     if (data.email) {
       const existingEmail = await customersRepository.findByEmail(data.email, data.tenantId)
@@ -47,18 +48,53 @@ export const customersService = {
       if (existingDoc) throw new ValidationError("A customer with this document already exists in this tenant")
     }
 
-    return customersRepository.create(data)
+    const customer = await customersRepository.create(data)
+
+    await auditLogger.log({
+      tenantId: data.tenantId,
+      userId,
+      entityType: "Customer",
+      entityId: customer.id,
+      action: "CREATE",
+      after: customer,
+    })
+
+    return customer
   },
 
-  async update(id: string, tenantId: string, data: UpdateCustomerInput) {
+  async update(id: string, tenantId: string, data: UpdateCustomerInput, userId: string) {
     const customer = await customersRepository.findById(id, tenantId)
     if (!customer) throw new NotFoundError("Customer")
-    return customersRepository.update(id, tenantId, data)
+    const updated = await customersRepository.update(id, tenantId, data)
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Customer",
+      entityId: id,
+      action: "UPDATE",
+      before: customer,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async deactivate(id: string, tenantId: string) {
+  async deactivate(id: string, tenantId: string, userId: string) {
     const customer = await customersRepository.findById(id, tenantId)
     if (!customer) throw new NotFoundError("Customer")
-    return customersRepository.deactivate(id, tenantId)
+    const updated = await customersRepository.deactivate(id, tenantId)
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Customer",
+      entityId: id,
+      action: "DELETE",
+      before: customer,
+      after: null,
+    })
+
+    return updated
   },
 }

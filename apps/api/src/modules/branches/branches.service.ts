@@ -1,5 +1,6 @@
 import { branchesRepository } from "./branches.repository.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
+import { auditLogger } from "../../lib/audit-logger.js"
 
 export const branchesService = {
   async list(tenantId: string) {
@@ -12,20 +13,32 @@ export const branchesService = {
     return branch
   },
 
-  async create(data: { tenantId: string; name: string; address?: string; phone?: string }) {
+  async create(data: { tenantId: string; name: string; address?: string; phone?: string }, userId: string) {
     // Check name uniqueness
     const existing = await branchesRepository.findByName(data.name, data.tenantId)
     if (existing) {
       throw new ValidationError("A branch with this name already exists in this tenant")
     }
 
-    return branchesRepository.create(data)
+    const branch = await branchesRepository.create(data)
+
+    await auditLogger.log({
+      tenantId: data.tenantId,
+      userId,
+      entityType: "Branch",
+      entityId: branch.id,
+      action: "CREATE",
+      after: branch,
+    })
+
+    return branch
   },
 
   async update(
     id: string,
     tenantId: string,
     data: { name?: string; address?: string; phone?: string },
+    userId: string,
   ) {
     const branch = await branchesRepository.findById(id, tenantId)
     if (!branch) throw new NotFoundError("Branch")
@@ -38,12 +51,35 @@ export const branchesService = {
       }
     }
 
-    return branchesRepository.update(id, tenantId, data)
+    const updated = await branchesRepository.update(id, tenantId, data)
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Branch",
+      entityId: id,
+      action: "UPDATE",
+      before: branch,
+      after: updated,
+    })
+
+    return updated
   },
 
-  async deactivate(id: string, tenantId: string) {
+  async deactivate(id: string, tenantId: string, userId: string) {
     const branch = await branchesRepository.findById(id, tenantId)
     if (!branch) throw new NotFoundError("Branch")
+
+    await auditLogger.log({
+      tenantId,
+      userId,
+      entityType: "Branch",
+      entityId: id,
+      action: "DELETE",
+      before: branch,
+      after: null,
+    })
+
     return branchesRepository.deactivate(id, tenantId)
   },
 }
