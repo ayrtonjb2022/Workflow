@@ -1,9 +1,10 @@
 import { FastifyInstance } from "fastify"
 import { Type } from "@sinclair/typebox"
 import { usersService } from "../modules/users/users.service.js"
+import { authGuard } from "../plugins/auth-guard.js"
 
 export async function userRoutes(app: FastifyInstance) {
-  app.addHook("preHandler", app.authGuard)
+  app.addHook("preHandler", authGuard)
 
   app.get("/users", {
     config: { requiredPermission: "users:read" },

@@ -1,5 +1,5 @@
 // Prisma returns Decimal as string, convert to number for API responses
-export function fromDecimal(value: string | number | null | undefined): number {
+export function fromDecimal(value: unknown): number {
   if (value == null) return 0
   return Number(value)
 }

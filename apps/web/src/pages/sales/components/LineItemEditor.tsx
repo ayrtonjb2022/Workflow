@@ -1,4 +1,6 @@
-import { useCallback } from "react"
+import { useCallback, useState, useRef, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { api } from "../../../lib/api.js"
 import { Button } from "../../../components/ui/Button.js"
 
 export interface LineItem {
@@ -20,6 +22,24 @@ export default function LineItemEditor({
   onChange,
   disabled = false,
 }: LineItemEditorProps) {
+  const [searchTerms, setSearchTerms] = useState<Record<number, string>>({})
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const searchRefs = useRef<Record<number, HTMLDivElement | null>>({})
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (openIndex !== null) {
+        const el = searchRefs.current[openIndex]
+        if (el && !el.contains(e.target as Node)) {
+          setOpenIndex(null)
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [openIndex])
+
   const addRow = useCallback(() => {
     onChange([
       ...items,
@@ -54,6 +74,25 @@ export default function LineItemEditor({
     [items, onChange],
   )
 
+  const selectProduct = useCallback(
+    (index: number, product: { id: string; name: string; unitPrice: number }) => {
+      const updated = items.map((item, i) => {
+        if (i !== index) return item
+        return {
+          productId: product.id,
+          productName: product.name,
+          quantity: item.quantity || 1,
+          unitPrice: Number(product.unitPrice),
+          subtotal: (item.quantity || 1) * Number(product.unitPrice),
+        }
+      })
+      onChange(updated)
+      setOpenIndex(null)
+      setSearchTerms((prev) => ({ ...prev, [index]: product.name }))
+    },
+    [items, onChange],
+  )
+
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto rounded-lg border border-gray-200">
@@ -80,17 +119,47 @@ export default function LineItemEditor({
           <tbody className="bg-white divide-y divide-gray-200">
             {items.map((item, index) => (
               <tr key={index}>
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    value={item.productName ?? ""}
-                    onChange={(e) =>
-                      updateRow(index, "productName", e.target.value)
-                    }
-                    placeholder="Nombre del producto"
-                    disabled={disabled}
-                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                  />
+                <td className="px-4 py-2 relative">
+                  <div ref={(el) => { searchRefs.current[index] = el }}>
+                    <input
+                      type="text"
+                      value={item.productId ? (item.productName ?? "") : (searchTerms[index] ?? "")}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setSearchTerms((prev) => ({ ...prev, [index]: val }))
+                        setOpenIndex(index)
+                        if (!val) {
+                          updateRow(index, "productId", "")
+                          updateRow(index, "productName", "")
+                        }
+                      }}
+                      onFocus={() => {
+                        if (!item.productId) setOpenIndex(index)
+                      }}
+                      placeholder="Buscar producto..."
+                      disabled={disabled}
+                      className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    />
+                    {item.productId && !disabled && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateRow(index, "productId", "")
+                          updateRow(index, "productName", "")
+                          setSearchTerms((prev) => ({ ...prev, [index]: "" }))
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                    {!disabled && openIndex === index && (
+                      <ProductSearchDropdown
+                        search={searchTerms[index] ?? ""}
+                        onSelect={(p) => selectProduct(index, p)}
+                      />
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-2">
                   <input
@@ -145,6 +214,68 @@ export default function LineItemEditor({
           Agregar fila
         </Button>
       )}
+    </div>
+  )
+}
+
+// ── Product search dropdown ─────────────────────────────────
+interface ProductResult {
+  id: string
+  name: string
+  code: string
+  unitPrice: number
+  stock: number
+}
+
+interface PaginatedProducts {
+  data: ProductResult[]
+}
+
+function ProductSearchDropdown({
+  search,
+  onSelect,
+}: {
+  search: string
+  onSelect: (p: ProductResult) => void
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["products", "search", search],
+    queryFn: () =>
+      api<PaginatedProducts>(`/products?search=${encodeURIComponent(search)}&limit=8`),
+    enabled: search.length >= 1,
+  })
+
+  if (!search || search.length < 1) return null
+
+  const products = data?.data ?? []
+
+  return (
+    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+      {isLoading && (
+        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+          Buscando...
+        </div>
+      )}
+      {!isLoading && products.length === 0 && (
+        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+          Sin resultados
+        </div>
+      )}
+      {products.map((p) => (
+        <button
+          key={p.id}
+          type="button"
+          onClick={() => onSelect(p)}
+          className="w-full text-left px-3 py-2.5 text-sm hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+        >
+          <div className="font-medium text-gray-900">{p.name}</div>
+          <div className="flex gap-3 text-xs text-gray-500 mt-0.5">
+            <span>Código: {p.code}</span>
+            <span>$ {Number(p.unitPrice).toFixed(2)}</span>
+            <span>Stock: {p.stock}</span>
+          </div>
+        </button>
+      ))}
     </div>
   )
 }

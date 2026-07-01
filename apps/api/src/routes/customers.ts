@@ -6,9 +6,10 @@ import { exportToExcel, parseExcel, validateCustomerRow, type ExcelRow } from ".
 import type { DocumentType } from "../lib/prisma.js"
 import { customersRepository } from "../modules/customers/customers.repository.js"
 import { ValidationError } from "../lib/errors.js"
+import { authGuard } from "../plugins/auth-guard.js"
 
 export async function customerRoutes(app: FastifyInstance) {
-  app.addHook("preHandler", app.authGuard)
+  app.addHook("preHandler", authGuard)
 
   // ── Customers ───────────────────────────────────────────────
 

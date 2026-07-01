@@ -1,39 +1,36 @@
-import { FastifyInstance, FastifyRequest } from "fastify"
+import { FastifyRequest, FastifyReply } from "fastify"
 import { ForbiddenError, AuthError } from "../lib/errors.js"
 import getPrismaClient from "../lib/prisma.js"
 
 const prisma = getPrismaClient()
 
-export async function authGuardPlugin(app: FastifyInstance) {
-  app.decorate("authGuard", async function (request: FastifyRequest) {
-    const token = request.cookies?.access_token
-    if (!token) {
-      throw new AuthError()
-    }
+export async function authGuard(request: FastifyRequest, _reply: FastifyReply) {
+  const token = request.cookies?.access_token
+  if (!token) {
+    throw new AuthError()
+  }
 
-    // Verify token via auth service
-    const { authService } = await import("../modules/auth/auth.service.js")
-    let payload: { userId: string; email: string; tenantId: string }
-    try {
-      payload = await authService.verifyAccessToken(token)
-    } catch {
-      throw new AuthError("Invalid or expired token")
-    }
+  // Verify token via auth service
+  const { authService } = await import("../modules/auth/auth.service.js")
+  let payload: { userId: string; email: string; tenantId: string }
+  try {
+    payload = await authService.verifyAccessToken(token)
+  } catch {
+    throw new AuthError("Invalid or expired token")
+  }
 
-    // Attach user info to request
-    request.userId = payload.userId
-    request.tenantId = payload.tenantId
+  // Attach user info to request
+  request.userId = payload.userId
+  request.tenantId = payload.tenantId
 
-    // Check required permission if specified in route config
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const requiredPermission = (request as any).routeConfig?.requiredPermission as string | undefined
-    if (requiredPermission) {
-      const hasPermission = await checkUserPermission(payload.userId, requiredPermission)
-      if (!hasPermission) {
-        throw new ForbiddenError()
-      }
+  // Check required permission if specified in route config (Fastify 5)
+  const requiredPermission = (request.routeOptions.config as unknown as Record<string, unknown>)?.requiredPermission as string | undefined
+  if (requiredPermission) {
+    const hasPermission = await checkUserPermission(payload.userId, requiredPermission)
+    if (!hasPermission) {
+      throw new ForbiddenError()
     }
-  })
+  }
 }
 
 async function checkUserPermission(userId: string, requiredPermission: string): Promise<boolean> {
@@ -65,10 +62,6 @@ async function checkUserPermission(userId: string, requiredPermission: string): 
 
 // Type augmentation for Fastify
 declare module "fastify" {
-  interface FastifyInstance {
-    authGuard: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
-  }
-
   interface FastifyRequest {
     userId: string
     tenantId: string

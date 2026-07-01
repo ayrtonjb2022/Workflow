@@ -1,9 +1,10 @@
 import { FastifyInstance } from "fastify"
 import { Type } from "@sinclair/typebox"
 import { ordersService } from "../modules/orders/orders.service.js"
+import { authGuard } from "../plugins/auth-guard.js"
 
 export async function orderRoutes(app: FastifyInstance) {
-  app.addHook("preHandler", app.authGuard)
+  app.addHook("preHandler", authGuard)
 
   // GET /api/orders — list with pagination, search, and status filter
   app.get("/orders", {

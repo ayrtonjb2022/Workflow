@@ -68,6 +68,31 @@ export const authService = {
     }
   },
 
+  async getProfile(userId: string) {
+    const profile = await authRepository.getProfile(userId)
+    if (!profile) {
+      throw new AuthError("User not found")
+    }
+
+    const permissions = new Set<string>()
+    const roles: string[] = []
+    for (const ur of profile.roles) {
+      roles.push(ur.role.name)
+      for (const rp of ur.role.rolePermissions) {
+        permissions.add(rp.permission.name)
+      }
+    }
+
+    return {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      tenantId: profile.tenantId,
+      roles,
+      permissions: Array.from(permissions),
+    }
+  },
+
   async verifyAccessToken(token: string): Promise<{ userId: string; email: string; tenantId: string }> {
     try {
       const payload = jwt.verify(token, JWT_SECRET) as { userId: string; email: string; tenantId: string }

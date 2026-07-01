@@ -18,7 +18,12 @@ export const usersService = {
     if (existing) throw new ValidationError("Email already exists in this tenant")
 
     const passwordHash = await bcrypt.hash(data.password, 12)
-    return usersRepository.create({ ...data, passwordHash })
+    return usersRepository.create({
+      email: data.email,
+      name: data.name,
+      passwordHash,
+      tenantId: data.tenantId,
+    })
   },
 
   async update(id: string, tenantId: string, data: { name?: string; active?: boolean }) {

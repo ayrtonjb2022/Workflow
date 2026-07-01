@@ -52,6 +52,20 @@ export async function authRoutes(app: FastifyInstance) {
     return result.user
   })
 
+  app.get("/auth/me", async (request, reply) => {
+    const token = request.cookies?.access_token
+    if (!token) {
+      return reply.status(401).send({ message: "Not authenticated" })
+    }
+    try {
+      const payload = await authService.verifyAccessToken(token)
+      const profile = await authService.getProfile(payload.userId)
+      return profile
+    } catch {
+      return reply.status(401).send({ message: "Invalid or expired token" })
+    }
+  }),
+
   app.post("/auth/logout", async (request, reply) => {
     const refreshToken = request.cookies?.refresh_token
     if (refreshToken) {

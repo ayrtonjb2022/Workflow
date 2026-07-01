@@ -35,7 +35,8 @@ export interface AddPaymentInput {
 
 function calculateTotals(items: InvoiceItemInput[]) {
   const lineItems = items.map((item) => ({
-    ...item,
+    productId: item.productId,
+    quantity: item.quantity,
     unitPrice: toDecimal(item.unitPrice),
     subtotal: toDecimal(item.quantity * item.unitPrice),
   }))
@@ -68,7 +69,11 @@ const prisma = getPrismaClient()
 
 export const invoicesService = {
   async list(tenantId: string, page?: number, limit?: number, search?: string, status?: string) {
-    return invoicesRepository.findAll(tenantId, page, limit, search, status)
+    const result = await invoicesRepository.findAll(tenantId, page, limit, search, status)
+    return {
+      ...result,
+      data: result.data.map((i: unknown) => formatInvoiceResponse(i as Record<string, unknown>)),
+    }
   },
 
   async get(id: string, tenantId: string) {

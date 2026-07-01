@@ -221,23 +221,17 @@ export default function QuoteDetail() {
             >
               Aceptar
             </Button>
+          </div>
+        )}
+
+        {quote.status === "ACCEPTED" && (
+          <div className="flex items-center justify-end gap-3">
             <Button
-              variant="secondary"
               loading={convertMutation.isPending}
               onClick={() => convertMutation.mutate()}
             >
               Convertir a Pedido
             </Button>
-          </div>
-        )}
-
-        {quote.status === "ACCEPTED" && (
-          <div className="flex items-center justify-end">
-            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-              <p className="text-sm text-green-800 font-medium">
-                ✓ Convertida a pedido
-              </p>
-            </div>
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import { ordersRepository } from "./orders.repository.js"
+import { invoicesService } from "../invoices/invoices.service.js"
 import { getNextNumber } from "../../lib/numbering.js"
 import { fromDecimal, toDecimal } from "../../lib/currency.js"
 import { NotFoundError, ValidationError } from "../../lib/errors.js"
@@ -28,7 +29,8 @@ export interface UpdateOrderInput {
 
 function calculateTotals(items: OrderItemInput[]) {
   const lineItems = items.map((item) => ({
-    ...item,
+    productId: item.productId,
+    quantity: item.quantity,
     unitPrice: toDecimal(item.unitPrice),
     subtotal: toDecimal(item.quantity * item.unitPrice),
   }))
@@ -54,7 +56,11 @@ function formatOrderResponse(order: Record<string, unknown>) {
 
 export const ordersService = {
   async list(tenantId: string, page?: number, limit?: number, search?: string, status?: string) {
-    return ordersRepository.findAll(tenantId, page, limit, search, status)
+    const result = await ordersRepository.findAll(tenantId, page, limit, search, status)
+    return {
+      ...result,
+      data: result.data.map((o: unknown) => formatOrderResponse(o as Record<string, unknown>)),
+    }
   },
 
   async get(id: string, tenantId: string) {
@@ -168,7 +174,23 @@ export const ordersService = {
     const order = await ordersRepository.findById(id, tenantId)
     if (!order) throw new NotFoundError("Order")
     if (order.status !== "SENT") throw new ValidationError("Only SENT orders can be marked as paid")
-    return ordersRepository.updateStatus(id, tenantId, "PAID")
+
+    await ordersRepository.updateStatus(id, tenantId, "PAID")
+
+    // Auto-create invoice from the paid order
+    const invoice = await invoicesService.create({
+      tenantId,
+      customerId: order.customerId,
+      branchId: order.branchId ?? undefined,
+      notes: order.notes ?? undefined,
+      items: order.items.map((item: { productId: string; quantity: number; unitPrice: unknown }) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+      })),
+    })
+
+    return { order: formatOrderResponse(order as unknown as Record<string, unknown>), invoice }
   },
 
   async cancel(id: string, tenantId: string) {

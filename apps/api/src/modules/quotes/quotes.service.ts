@@ -28,7 +28,8 @@ export interface UpdateQuoteInput {
 
 function calculateTotals(items: QuoteItemInput[]) {
   const lineItems = items.map((item) => ({
-    ...item,
+    productId: item.productId,
+    quantity: item.quantity,
     unitPrice: toDecimal(item.unitPrice),
     subtotal: toDecimal(item.quantity * item.unitPrice),
   }))
@@ -57,7 +58,11 @@ const prisma = getPrismaClient()
 
 export const quotesService = {
   async list(tenantId: string, page?: number, limit?: number, search?: string, status?: string) {
-    return quotesRepository.findAll(tenantId, page, limit, search, status)
+    const result = await quotesRepository.findAll(tenantId, page, limit, search, status)
+    return {
+      ...result,
+      data: result.data.map((q: unknown) => formatQuoteResponse(q as Record<string, unknown>)),
+    }
   },
 
   async get(id: string, tenantId: string) {

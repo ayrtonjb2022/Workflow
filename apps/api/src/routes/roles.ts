@@ -1,9 +1,21 @@
 import { FastifyInstance } from "fastify"
 import { Type } from "@sinclair/typebox"
 import { rolesService } from "../modules/roles/roles.service.js"
+import { authGuard } from "../plugins/auth-guard.js"
+import getPrismaClient from "../lib/prisma.js"
+
+const prisma = getPrismaClient()
 
 export async function roleRoutes(app: FastifyInstance) {
-  app.addHook("preHandler", app.authGuard)
+  app.addHook("preHandler", authGuard)
+
+  // GET /api/permissions — list all available permissions (for role editor)
+  app.get("/permissions", {
+    config: { requiredPermission: "roles:read" },
+    schema: {},
+  }, async () => {
+    return prisma.permission.findMany({ orderBy: [{ resource: "asc" }, { action: "asc" }] })
+  })
 
   // List roles
   app.get("/roles", {

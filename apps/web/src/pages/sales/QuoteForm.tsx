@@ -75,6 +75,13 @@ export default function QuoteForm() {
       next.items = "Al menos un producto"
     }
 
+    const missingProductId = items.some(
+      (i) => i.productName && !i.productId,
+    )
+    if (missingProductId) {
+      next.items = "Seleccioná un producto existente de la lista"
+    }
+
     const invalidItem = items.some(
       (i) => i.productName && (i.quantity <= 0 || i.unitPrice < 0),
     )

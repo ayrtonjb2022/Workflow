@@ -24,7 +24,7 @@ export default function OrderDetail() {
   })
 
   const payMutation = useMutation({
-    mutationFn: () => api(`/orders/${id}/pay`, { method: "POST" }),
+    mutationFn: () => api(`/orders/${id}/paid`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders", id] })
     },

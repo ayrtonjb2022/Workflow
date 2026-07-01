@@ -1,9 +1,10 @@
 import { FastifyInstance } from "fastify"
 import { Type } from "@sinclair/typebox"
 import { quotesService } from "../modules/quotes/quotes.service.js"
+import { authGuard } from "../plugins/auth-guard.js"
 
 export async function quoteRoutes(app: FastifyInstance) {
-  app.addHook("preHandler", app.authGuard)
+  app.addHook("preHandler", authGuard)
 
   // GET /api/quotes — list with pagination, search, and status filter
   app.get("/quotes", {

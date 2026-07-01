@@ -11,6 +11,34 @@ export const authRepository = {
     return prisma.user.findUnique({ where: { id } })
   },
 
+  async getProfile(id: string) {
+    return prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        tenantId: true,
+        roles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+                rolePermissions: {
+                  select: {
+                    permission: {
+                      select: { name: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+  },
+
   async createUser(data: { email: string; name: string; passwordHash: string; tenantId: string }) {
     return prisma.user.create({
       data: {
