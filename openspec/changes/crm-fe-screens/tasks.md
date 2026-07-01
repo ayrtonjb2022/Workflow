@@ -42,9 +42,9 @@ Chain strategy: pending
 - [x] 3.1 Create `components/ui/Button.tsx` — variants, sizes, loading state
 - [x] 3.2 Create `components/ui/Input.tsx` — label, error, iconLeft, type variants
 - [x] 3.3 Create `components/ui/Modal.tsx` — overlay with ESC/backdrop close
-- [ ] 3.4 Create `components/ui/Table.tsx` — generic `<T>` columns, loading skeleton, empty state (PR #2)
-- [ ] 3.5 Create `components/ui/Pagination.tsx` — prev/next with boundary disable (PR #2)
-- [ ] 3.6 Create `components/ui/SearchBar.tsx` — debounced 300ms onChange, clear button (PR #2)
+- [x] 3.4 Create `components/ui/Table.tsx` — generic `<T>` columns, loading skeleton, empty state (PR #2)
+- [x] 3.5 Create `components/ui/Pagination.tsx` — prev/next with boundary disable (PR #2)
+- [x] 3.6 Create `components/ui/SearchBar.tsx` — debounced 300ms onChange, clear button (PR #2)
 
 ## Phase 4: Layouts
 
@@ -53,8 +53,8 @@ Chain strategy: pending
 
 ## Phase 5: Auth Pages (PR #2)
 
-- [ ] 5.1 Create `pages/Login.tsx` — form with validation, loading, inline errors
-- [ ] 5.2 Create `pages/Register.tsx` — form validation, auto-login on success
+- [x] 5.1 Create `pages/Login.tsx` — form with validation, loading, inline errors
+- [x] 5.2 Create `pages/Register.tsx` — form validation, auto-login on success
 
 ## Phase 6: Customer Pages (PR #3)
 
@@ -70,3 +70,5 @@ Chain strategy: pending
 - [x] 7.1 Modify `main.tsx` — wrap `<App />` with `<AuthProvider>`
 - [x] 7.2 Modify `App.tsx` — routes: `/login`, `/register`, `/customers`, `/customers/:id`, `/`→`/customers`, `*`→NotFound
 - [x] 7.3 Add `ProtectedRoute` wrapper — redirects to `/login` when unauthenticated
+- [x] 7.4 Run `pnpm typecheck --filter @crm/web` + `pnpm lint`
+- [x] 7.5 Mark tasks in tasks.md
