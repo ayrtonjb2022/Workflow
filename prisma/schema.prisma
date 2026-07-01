@@ -75,8 +75,9 @@ model Tenant {
   quotes        Quote[]
   orders        Order[]
   invoices      Invoice[]
-  cashRegisters CashRegister[]
-  cashMovements CashMovement[]
+  cashRegisters    CashRegister[]
+  cashMovements    CashMovement[]
+  documentSequences DocumentSequence[]
 
   @@map("tenants")
 }
@@ -355,10 +356,11 @@ model Quote {
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
-  tenant   Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  branch   Branch?    @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  customer Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  tenant   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  branch   Branch?     @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customer Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
   items    QuoteItem[]
+  orders   Order[]
 
   @@unique([tenantId, number])
   @@index([tenantId])
@@ -399,6 +401,9 @@ model Order {
   branch   Branch?    @relation(fields: [branchId], references: [id], onDelete: Restrict)
   customer Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
   items    OrderItem[]
+
+  sourceQuoteId String? @map("source_quote_id")
+  sourceQuote   Quote?  @relation(fields: [sourceQuoteId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, number])
   @@index([tenantId])
@@ -472,6 +477,20 @@ model InvoicePayment {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@map("invoice_payments")
+}
+
+model DocumentSequence {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  prefix    String   // "COT", "PED", "FAC"
+  counter   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, prefix])
+  @@index([tenantId])
+  @@map("document_sequences")
 }
 
 // ── Cash ─────────────────────────────────────────────────────
