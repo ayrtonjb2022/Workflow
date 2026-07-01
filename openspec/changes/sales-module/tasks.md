@@ -41,10 +41,10 @@ Chain strategy: pending
 
 ## Phase 3: Backend Routes + Wiring
 
-- [ ] 3.1 Create `routes/quotes.ts` — CRUD + `POST /:id/convert`
-- [ ] 3.2 Create `routes/orders.ts` — CRUD
-- [ ] 3.3 Create `routes/invoices.ts` — CRUD + `POST /:id/payments`
-- [ ] 3.4 Modify `app.ts` — register quotes, orders, invoices route modules
+- [x] 3.1 Create `routes/quotes.ts` — CRUD + `POST /:id/convert`
+- [x] 3.2 Create `routes/orders.ts` — CRUD
+- [x] 3.3 Create `routes/invoices.ts` — CRUD + `POST /:id/payments`
+- [x] 3.4 Modify `app.ts` — register quotes, orders, invoices route modules
 
 ## Phase 4: Frontend Foundation
 
