@@ -1,4 +1,5 @@
-import { Outlet, NavLink } from "react-router"
+import { useState, useRef, useEffect } from "react"
+import { Outlet, NavLink, useNavigate } from "react-router"
 import { useQuery } from "@tanstack/react-query"
 import { api } from "../lib/api.js"
 import { useAuth } from "../providers/AuthProvider.js"
@@ -22,6 +23,7 @@ import {
   faHistory,
   faBell,
   faGear,
+  faSignOutAlt,
 } from "@fortawesome/free-solid-svg-icons"
 
 // ── Types ──
@@ -134,7 +136,26 @@ function mobileNavLinkClass({ isActive }: { isActive: boolean }) {
 // ── Component ──
 
 export default function RootLayout() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [bellOpen, setBellOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const bellRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setBellOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
 
   const { data: stats } = useQuery<DashboardStats>({
     queryKey: ["dashboard-stats"],
@@ -158,32 +179,86 @@ export default function RootLayout() {
 
         {/* Right — user area */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Bell icon with notification popover */}
+          <div className="relative" ref={bellRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setBellOpen((prev) => !prev)
+                setMenuOpen(false)
+              }}
+              className="w-9 h-9 rounded-xl bg-paper/60 flex items-center justify-center text-muted hover:text-dark hover:bg-ink/30 transition-all"
+              aria-label="Notificaciones"
+            >
+              <FontAwesomeIcon icon={faBell} className="text-base" />
+            </button>
+            {bellOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-6 text-center">
+                <p className="text-sm text-muted">Sin notificaciones</p>
+              </div>
+            )}
+          </div>
+
+          {/* Gear icon — navigate to settings */}
           <button
             type="button"
-            className="w-9 h-9 rounded-xl bg-paper/60 flex items-center justify-center text-muted hover:text-dark hover:bg-ink/30 transition-all"
-            aria-label="Notificaciones"
-          >
-            <FontAwesomeIcon icon={faBell} className="text-base" />
-          </button>
-          <button
-            type="button"
+            onClick={() => navigate("/settings")}
             className="w-9 h-9 rounded-xl bg-paper/60 flex items-center justify-center text-muted hover:text-dark hover:bg-ink/30 transition-all"
             aria-label="Configuración"
           >
             <FontAwesomeIcon icon={faGear} className="text-base" />
           </button>
-          <div className="flex items-center gap-3 pl-3 sm:pl-4 border-l border-ink/60">
-            <div className="w-9 h-9 rounded-full bg-wave flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-              {user ? getInitials(user.name) : "U"}
-            </div>
-            <div className="hidden sm:block leading-tight">
-              <p className="text-sm font-medium text-dark">
-                {user?.name ?? "Usuario"}
-              </p>
-              <p className="text-xs text-muted">
-                {user?.roles?.[0] ?? "Administrador"}
-              </p>
-            </div>
+
+          {/* User avatar with dropdown */}
+          <div className="relative pl-3 sm:pl-4 border-l border-ink/60" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen((prev) => !prev)
+                setBellOpen(false)
+              }}
+              className="flex items-center gap-3 cursor-pointer"
+            >
+              <div className="w-9 h-9 rounded-full bg-wave flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                {user ? getInitials(user.name) : "U"}
+              </div>
+              <div className="hidden sm:block leading-tight text-left">
+                <p className="text-sm font-medium text-dark">
+                  {user?.name ?? "Usuario"}
+                </p>
+                <p className="text-xs text-muted">
+                  {user?.roles?.[0] ?? "Administrador"}
+                </p>
+              </div>
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    navigate("/settings")
+                    setMenuOpen(false)
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                >
+                  <FontAwesomeIcon icon={faGear} className="w-4" />
+                  Configuración
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false)
+                    logout()
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
+                >
+                  <FontAwesomeIcon icon={faSignOutAlt} className="w-4" />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

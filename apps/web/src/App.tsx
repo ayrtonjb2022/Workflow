@@ -21,6 +21,7 @@ import ProductForm from "./pages/products/ProductForm.js"
 import ProductDetail from "./pages/products/ProductDetail.js"
 import SupplierList from "./pages/suppliers/SupplierList.js"
 import SupplierDetail from "./pages/suppliers/SupplierDetail.js"
+import SettingsPage from "./pages/SettingsPage.js"
 import BranchList from "./pages/settings/BranchList.js"
 import WarehouseList from "./pages/settings/WarehouseList.js"
 import CashRegisterList from "./pages/cash/CashRegisterList.js"
@@ -64,6 +65,7 @@ const router = createBrowserRouter([
       { path: "/inventory/products/new", element: <ProductForm /> },
       { path: "/inventory/products/:id", element: <ProductDetail /> },
       { path: "/inventory/products/:id/edit", element: <ProductForm /> },
+      { path: "/settings", element: <SettingsPage /> },
       { path: "/settings/branches", element: <BranchList /> },
       { path: "/settings/warehouses", element: <WarehouseList /> },
       { path: "/cash/registers", element: <CashRegisterList /> },

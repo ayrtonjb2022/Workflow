@@ -59,6 +59,10 @@ model Tenant {
   name      String
   slug      String   @unique
   logo      String?
+  address   String?
+  phone     String?
+  email     String?
+  taxId     String?  @map("tax_id")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
