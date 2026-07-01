@@ -58,8 +58,8 @@ Chain strategy: pending
 
 ## Phase 6: Customer Pages (PR #3)
 
-- [ ] 6.1 Create `pages/customers/CustomerList.tsx` — paginated table + search + create/delete
-- [ ] 6.2 Create `pages/customers/CreateCustomerModal.tsx` — modal form for new customer
+- [x] 6.1 Create `pages/customers/CustomerList.tsx` — paginated table + search + create/delete
+- [x] 6.2 Create `pages/customers/CreateCustomerModal.tsx` — modal form for new customer
 - [ ] 6.3 Create `pages/customers/CustomerDetail.tsx` — info card + contacts table + add contact
 - [ ] 6.4 Create `pages/customers/CustomerInfoCard.tsx` — read-only customer info display
 - [ ] 6.5 Create `pages/customers/ContactsTable.tsx` — contacts list with delete

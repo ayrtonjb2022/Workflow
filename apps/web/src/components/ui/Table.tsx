@@ -27,7 +27,7 @@ function SkeletonRow({ columns }: { columns: number }) {
   )
 }
 
-export function Table<T extends Record<string, unknown>>({
+export function Table<T extends object>({
   columns,
   data,
   loading = false,
