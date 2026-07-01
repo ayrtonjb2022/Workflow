@@ -60,10 +60,10 @@ Chain strategy: pending
 
 - [x] 6.1 Create `pages/customers/CustomerList.tsx` — paginated table + search + create/delete
 - [x] 6.2 Create `pages/customers/CreateCustomerModal.tsx` — modal form for new customer
-- [ ] 6.3 Create `pages/customers/CustomerDetail.tsx` — info card + contacts table + add contact
-- [ ] 6.4 Create `pages/customers/CustomerInfoCard.tsx` — read-only customer info display
-- [ ] 6.5 Create `pages/customers/ContactsTable.tsx` — contacts list with delete
-- [ ] 6.6 Create `pages/customers/AddContactModal.tsx` — modal form for new contact
+- [x] 6.3 Create `pages/customers/CustomerDetail.tsx` — info card + contacts table + add contact
+- [x] 6.4 Create `pages/customers/CustomerInfoCard.tsx` — read-only customer info with inline edit
+- [x] 6.5 Create `pages/customers/ContactsTable.tsx` — contacts list with delete
+- [x] 6.6 Create `pages/customers/AddContactModal.tsx` — modal form for new contact
 
 ## Phase 7: Routing + Wiring
 
