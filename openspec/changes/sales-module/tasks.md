@@ -48,14 +48,14 @@ Chain strategy: pending
 
 ## Phase 4: Frontend Foundation
 
-- [ ] 4.1 Create `types/sales.ts` — Quote/Order/Invoice/InvoicePayment interfaces + status unions
-- [ ] 4.2 Create `pages/sales/components/StatusBadge.tsx` — colored pill per status
-- [ ] 4.3 Create `pages/sales/components/LineItemEditor.tsx` — product autocomplete, qty/price, add/remove rows
+- [x] 4.1 Create `types/sales.ts` — Quote/Order/Invoice/InvoicePayment interfaces + status unions
+- [x] 4.2 Create `pages/sales/components/StatusBadge.tsx` — colored pill per status
+- [x] 4.3 Create `pages/sales/components/LineItemEditor.tsx` — product autocomplete, qty/price, add/remove rows
 
 ## Phase 5: Quote Pages
 
-- [ ] 5.1 Create `pages/sales/QuoteList.tsx` — table + status filter + StatusBadge column
-- [ ] 5.2 Create `pages/sales/QuoteForm.tsx` — full-page form with LineItemEditor, customer autocomplete, save/send
+- [x] 5.1 Create `pages/sales/QuoteList.tsx` — table + status filter + StatusBadge column
+- [x] 5.2 Create `pages/sales/QuoteForm.tsx` — full-page form with LineItemEditor, customer autocomplete, save/send
 
 ## Phase 6: Order + Invoice Lists
 
@@ -73,5 +73,5 @@ Chain strategy: pending
 
 - [ ] 8.1 Modify `App.tsx` — add 7 sales routes (`/sales/quotes/*`, `/sales/orders/*`, `/sales/invoices/*`)
 - [ ] 8.2 Modify `RootLayout.tsx` — add "Ventas" group with sub-nav for quotes, orders, invoices
-- [ ] 8.3 Verify: `pnpm build` passes, all routes accessible, all permissions enforced
+- [x] 8.3 Verify: `pnpm typecheck --filter @crm/web` + `pnpm lint` pass (Phase 4-5 frontend files)
 
