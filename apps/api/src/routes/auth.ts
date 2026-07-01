@@ -84,6 +84,12 @@ export async function authRoutes(app: FastifyInstance) {
     return result.user
   })
 
+  app.get("/auth/me", {
+    preHandler: [app.authGuard],
+  }, async (request) => {
+    return authService.getProfile(request.userId, request.tenantId)
+  })
+
   app.post("/auth/magic-link", {
     schema: {
       body: Type.Object({

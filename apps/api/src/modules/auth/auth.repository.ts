@@ -74,4 +74,23 @@ export const authRepository = {
       data: { revokedAt: new Date() },
     })
   },
+
+  async findProfile(userId: string, tenantId: string) {
+    return prisma.user.findFirst({
+      where: { id: userId, tenantId, active: true },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: { permission: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+  },
 }

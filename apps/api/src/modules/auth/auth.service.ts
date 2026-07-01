@@ -2,7 +2,7 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import crypto from "node:crypto"
 import { authRepository } from "./auth.repository.js"
-import { AuthError } from "../../lib/errors.js"
+import { AuthError, NotFoundError } from "../../lib/errors.js"
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-in-production"
 const ACCESS_TOKEN_EXPIRY = "15m"
@@ -66,6 +66,20 @@ export const authService = {
     if (stored) {
       await authRepository.revokeRefreshToken(stored.id)
     }
+  },
+
+  async getProfile(userId: string, tenantId: string) {
+    const user = await authRepository.findProfile(userId, tenantId)
+    if (!user) throw new NotFoundError("User")
+
+    const roles = user.roles.map(r => r.role.name)
+    const permissions = [...new Set(
+      user.roles.flatMap(r =>
+        r.role.rolePermissions.map(rp => `${rp.permission.resource}:${rp.permission.action}`)
+      )
+    )]
+
+    return { id: user.id, email: user.email, name: user.name, tenantId: user.tenantId, roles, permissions }
   },
 
   async verifyAccessToken(token: string): Promise<{ userId: string; email: string; tenantId: string }> {
